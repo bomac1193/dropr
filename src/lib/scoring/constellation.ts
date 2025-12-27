@@ -50,7 +50,7 @@ interface ConstellationScore {
   combinedScore: number;   // 0-1, weighted combination
 }
 
-interface ComputedProfile {
+export interface ComputedProfile {
   profile: Omit<ConstellationProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
   explanation: ConstellationExplanation;
   result: FullResult;
