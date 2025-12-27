@@ -521,10 +521,15 @@ export interface GeneratedPrompt {
 
   /** Recommended model parameters */
   parameters?: {
+    // Image parameters
     cfgScale?: number;
     steps?: number;
     sampler?: string;
     aspectRatio?: string;
+    // Music parameters
+    duration?: number;
+    bpm?: number;
+    model?: string;
   };
 
   /** Archetype-based style modifiers */

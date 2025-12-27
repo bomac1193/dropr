@@ -73,6 +73,21 @@ export async function POST(request: NextRequest) {
     // Create or get user
     let finalUserId = userId;
 
+    if (finalUserId) {
+      // Verify user exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', finalUserId)
+        .single();
+
+      if (!existingUser) {
+        // User doesn't exist, create new one
+        console.log('User ID not found, creating new user');
+        finalUserId = undefined;
+      }
+    }
+
     if (!finalUserId) {
       // Create new anonymous user
       const { data: newUser, error: userError } = await supabase
@@ -200,8 +215,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Quiz submission error:', error);
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error details:', errorMessage, errorStack);
     return NextResponse.json(
-      { error: 'Failed to process quiz', details: String(error) },
+      { error: 'Failed to process quiz', details: errorMessage, stack: errorStack },
       { status: 500 }
     );
   }
