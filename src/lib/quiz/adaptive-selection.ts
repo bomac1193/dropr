@@ -211,20 +211,29 @@ function calculateQuestionScore(
 ): number {
   let score = 0;
 
-  // Base score from discrimination (higher = more informative)
-  score += question.discrimination * 0.4;
+  // For new users, use much more randomization to get diverse questions
+  const isNewUser = !priorData?.traitEstimates;
 
-  // Difficulty matching: prefer questions near current estimate
-  if (priorData?.traitEstimates?.[question.primaryTrait] !== undefined) {
-    const estimate = priorData.traitEstimates[question.primaryTrait]!;
-    // Convert estimate (0-1) to difficulty scale (-3 to 3)
-    const estimatedAbility = (estimate - 0.5) * 6;
-    const difficultyMatch = 1 - Math.abs(question.difficulty - estimatedAbility) / 6;
-    score += difficultyMatch * config.informationGainWeight;
+  if (isNewUser) {
+    // For new users: heavy randomization with light discrimination weighting
+    score += question.discrimination * 0.2;
+    score += Math.random() * 1.5; // Much larger random factor for diversity
   } else {
-    // Prefer moderate difficulty for new users
-    const difficultyPenalty = Math.abs(question.difficulty) / 3;
-    score += (1 - difficultyPenalty) * 0.2;
+    // For returning users: use IRT-based scoring
+    // Base score from discrimination (higher = more informative)
+    score += question.discrimination * 0.4;
+
+    // Difficulty matching: prefer questions near current estimate
+    if (priorData?.traitEstimates?.[question.primaryTrait] !== undefined) {
+      const estimate = priorData.traitEstimates[question.primaryTrait]!;
+      // Convert estimate (0-1) to difficulty scale (-3 to 3)
+      const estimatedAbility = (estimate - 0.5) * 6;
+      const difficultyMatch = 1 - Math.abs(question.difficulty - estimatedAbility) / 6;
+      score += difficultyMatch * config.informationGainWeight;
+    }
+
+    // Moderate randomization for returning users
+    score += Math.random() * 0.5;
   }
 
   // Bonus for questions that measure multiple traits
@@ -232,46 +241,32 @@ function calculateQuestionScore(
     score += Object.keys(question.secondaryTraits).length * 0.1;
   }
 
-  // Slight randomization to prevent always picking same questions
-  score += Math.random() * 0.2;
-
   return score;
 }
 
 /**
- * Select questions with some randomization for diversity
+ * Select questions with weighted random selection for diversity
+ * All selection is now weighted-random to maximize variety
  */
 function selectWithRandomization(
   scored: { question: ItemBankQuestion; score: number }[],
   count: number
 ): ItemBankQuestion[] {
   const selected: ItemBankQuestion[] = [];
+  const remaining = [...scored];
 
-  // Take top 50% deterministically, rest with weighted random
-  const deterministicCount = Math.ceil(count / 2);
-  const randomCount = count - deterministicCount;
-
-  // Add top-scored deterministically
-  for (let i = 0; i < Math.min(deterministicCount, scored.length); i++) {
-    selected.push(scored[i].question);
-  }
-
-  // Add remaining with weighted random selection
-  const remaining = scored.slice(deterministicCount);
-  if (remaining.length > 0 && randomCount > 0) {
+  // Use weighted random selection for ALL questions to maximize diversity
+  for (let i = 0; i < count && remaining.length > 0; i++) {
     const totalScore = remaining.reduce((sum, s) => sum + s.score, 0);
+    let rand = Math.random() * totalScore;
+    let cumulative = 0;
 
-    for (let i = 0; i < randomCount && remaining.length > 0; i++) {
-      let rand = Math.random() * totalScore;
-      let cumulative = 0;
-
-      for (let j = 0; j < remaining.length; j++) {
-        cumulative += remaining[j].score;
-        if (rand <= cumulative) {
-          selected.push(remaining[j].question);
-          remaining.splice(j, 1);
-          break;
-        }
+    for (let j = 0; j < remaining.length; j++) {
+      cumulative += remaining[j].score;
+      if (rand <= cumulative) {
+        selected.push(remaining[j].question);
+        remaining.splice(j, 1);
+        break;
       }
     }
   }
