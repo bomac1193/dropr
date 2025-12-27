@@ -252,7 +252,7 @@ function calculateTraitScore(acc: {
   // Weighted average (IRT-style)
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   const weightedSum = normalizedValues.reduce((sum, v, i) => sum + v * weights[i], 0);
-  const rawScore = weightedSum / totalWeight;
+  const rawScore = totalWeight > 0 ? weightedSum / totalWeight : 0.5;
 
   // Score is now directly in 0-1 range
   const score = clamp(rawScore, 0, 1);
@@ -264,8 +264,9 @@ function calculateTraitScore(acc: {
 
   // Bayesian confidence estimation
   // Higher with more items, higher discrimination, and lower variance
-  const avgDiscrimination =
-    discriminations.reduce((a, b) => a + b, 0) / discriminations.length;
+  const avgDiscrimination = discriminations.length > 0
+    ? discriminations.reduce((a, b) => a + b, 0) / discriminations.length
+    : 1.0;
 
   // Base confidence from sample size (diminishing returns)
   const sampleConfidence = 1 - 1 / (1 + n * 0.5);
@@ -442,9 +443,13 @@ export function getProgressUpdate(
     result.questionsNeededForTarget
   );
 
+  // Safety: ensure no NaN values
+  const safeConfidence = isNaN(result.overallConfidence) ? 0 : result.overallConfidence;
+  const safeAccuracy = isNaN(result.estimatedAccuracy) ? 0 : result.estimatedAccuracy;
+
   return {
-    currentConfidence: result.overallConfidence,
-    estimatedAccuracy: result.estimatedAccuracy,
+    currentConfidence: safeConfidence,
+    estimatedAccuracy: safeAccuracy,
     questionsRemaining,
     traitProgress,
     message,

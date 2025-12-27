@@ -155,10 +155,18 @@ export function selectAdaptiveQuestions(
     }
   }
 
-  // Step 6: Shuffle final question order
-  const shuffled = shuffleArray(selectedQuestions);
+  // Step 6: Deduplicate questions (safety check)
+  const seenIds = new Set<string>();
+  const uniqueQuestions = selectedQuestions.filter((q) => {
+    if (seenIds.has(q.id)) return false;
+    seenIds.add(q.id);
+    return true;
+  });
 
-  // Step 7: Calculate estimated confidence and duration
+  // Step 7: Shuffle final question order
+  const shuffled = shuffleArray(uniqueQuestions);
+
+  // Step 8: Calculate estimated confidence and duration
   const estimatedConfidence = calculateEstimatedConfidence(traitCoverage);
   const estimatedDuration = shuffled.length * 8; // ~8 seconds per question
 
@@ -253,22 +261,48 @@ function selectWithRandomization(
   count: number
 ): ItemBankQuestion[] {
   const selected: ItemBankQuestion[] = [];
+  const selectedIds = new Set<string>();
   const remaining = [...scored];
 
   // Use weighted random selection for ALL questions to maximize diversity
   for (let i = 0; i < count && remaining.length > 0; i++) {
     const totalScore = remaining.reduce((sum, s) => sum + s.score, 0);
+
+    if (totalScore <= 0) {
+      // Fallback: pick random if scores are zero
+      const idx = Math.floor(Math.random() * remaining.length);
+      const picked = remaining[idx];
+      if (!selectedIds.has(picked.question.id)) {
+        selected.push(picked.question);
+        selectedIds.add(picked.question.id);
+      }
+      remaining.splice(idx, 1);
+      continue;
+    }
+
     let rand = Math.random() * totalScore;
     let cumulative = 0;
+    let pickedIdx = -1;
 
     for (let j = 0; j < remaining.length; j++) {
       cumulative += remaining[j].score;
       if (rand <= cumulative) {
-        selected.push(remaining[j].question);
-        remaining.splice(j, 1);
+        pickedIdx = j;
         break;
       }
     }
+
+    // Fallback if floating point issues prevent selection
+    if (pickedIdx === -1) {
+      pickedIdx = remaining.length - 1;
+    }
+
+    const picked = remaining[pickedIdx];
+    if (!selectedIds.has(picked.question.id)) {
+      selected.push(picked.question);
+      selectedIds.add(picked.question.id);
+    }
+    remaining.splice(pickedIdx, 1);
   }
 
   return selected;
