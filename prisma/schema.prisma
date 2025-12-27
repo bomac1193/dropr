@@ -1,0 +1,242 @@
+// Subtaste Prisma Schema
+// Multi-layer taste profile system with constellation mapping
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// User & Identity
+// =============================================================================
+
+model User {
+  id          String   @id @default(cuid())
+  email       String?  @unique
+  displayName String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  psychometricProfile  PsychometricProfile?
+  aestheticPreference  AestheticPreference?
+  constellationProfile ConstellationProfile?
+  subcultureFits       UserSubcultureFit[]
+  contentInteractions  UserContentInteraction[]
+  contentScores        ContentScore[]
+
+  @@index([email])
+}
+
+// =============================================================================
+// Psychometric Layer
+// =============================================================================
+
+/// PsychometricProfile: Big Five traits + extended taste-relevant traits.
+/// All values normalized 0-1.
+model PsychometricProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Big Five (OCEAN)
+  openness          Float @default(0.5)
+  conscientiousness Float @default(0.5)
+  extraversion      Float @default(0.5)
+  agreeableness     Float @default(0.5)
+  neuroticism       Float @default(0.5)
+
+  // Extended traits
+  noveltySeeking       Float @default(0.5)
+  aestheticSensitivity Float @default(0.5)
+  riskTolerance        Float @default(0.5)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// Aesthetic Layer
+// =============================================================================
+
+/// AestheticPreference: Visual and music preferences bridging psychometrics to content.
+model AestheticPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Visual preferences
+  colorPaletteVector   Float[] @default([])
+  darknessPreference   Float   @default(0.5) // 0 = bright, 1 = dark
+  complexityPreference Float   @default(0.5) // 0 = minimal, 1 = complex
+  symmetryPreference   Float   @default(0.5) // 0 = asymmetric, 1 = symmetric
+  organicVsSynthetic   Float   @default(0.5) // 0 = organic, 1 = synthetic
+  minimalVsMaximal     Float   @default(0.5) // 0 = minimal, 1 = maximal
+
+  // Music preferences
+  tempoRangeMin               Float @default(80)  // BPM lower bound
+  tempoRangeMax               Float @default(140) // BPM upper bound
+  energyRangeMin              Float @default(0.3)
+  energyRangeMax              Float @default(0.7)
+  harmonicDissonanceTolerance Float @default(0.3) // 0 = consonant, 1 = dissonant
+  rhythmPreference            Float @default(0.5) // 0 = ambient, 1 = percussive
+  acousticVsDigital           Float @default(0.5) // 0 = acoustic, 1 = digital
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================================
+// Constellation Layer
+// =============================================================================
+
+/// ConstellationProfile: User's archetypal taste cluster mapping.
+model ConstellationProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  primaryConstellationId String // ConstellationId (validated at app level)
+  blendWeights           Json   // { [ConstellationId]: number }
+
+  subtasteIndex    Float @default(50) // 0-100, taste coherence
+  explorerScore    Float @default(50) // 0-100, novelty seeking behavior
+  earlyAdopterScore Float @default(50) // 0-100, trend adoption speed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([primaryConstellationId])
+}
+
+// =============================================================================
+// Subculture Clusters
+// =============================================================================
+
+/// SubcultureCluster: Emergent or defined subculture for trend detection.
+model SubcultureCluster {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  tags             String[]
+  embeddingVector  Float[]  @default([])
+  constellationHints String[] @default([]) // ConstellationIds with high affinity
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userFits UserSubcultureFit[]
+  content  ContentItem[]
+
+  @@index([name])
+}
+
+/// UserSubcultureFit: Tracks user-subculture relationship over time.
+model UserSubcultureFit {
+  id           String @id @default(cuid())
+  userId       String
+  subcultureId String
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subculture SubcultureCluster @relation(fields: [subcultureId], references: [id], onDelete: Cascade)
+
+  affinityScore     Float  @default(50) // 0-100
+  earlyAdopterScore Float  @default(50) // 0-100
+  adoptionStage     String @default("mid") // "early" | "mid" | "late"
+
+  firstSeenAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, subcultureId])
+  @@index([userId])
+  @@index([subcultureId])
+}
+
+// =============================================================================
+// Content & Interactions
+// =============================================================================
+
+/// ContentItem: Any scoreable content piece (image, track, ai_artifact).
+model ContentItem {
+  id           String  @id @default(cuid())
+  type         String  // "image" | "track" | "ai_artifact"
+  title        String?
+  description  String?
+  thumbnailUrl String?
+  contentUrl   String?
+
+  featureEmbedding Float[] @default([])
+  tags             String[]
+
+  subcultureId String?
+  subculture   SubcultureCluster? @relation(fields: [subcultureId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  interactions UserContentInteraction[]
+  scores       ContentScore[]
+
+  @@index([type])
+  @@index([subcultureId])
+}
+
+/// UserContentInteraction: Logs every user-content touchpoint.
+model UserContentInteraction {
+  id        String @id @default(cuid())
+  userId    String
+  contentId String
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  interactionType String  // "view" | "like" | "dislike" | "save" | "share" | "skip"
+  rating          Int?    // 1-5 star rating
+  dwellTimeMs     Int?    // time spent viewing
+  source          String  // "quiz" | "swipe" | "feed"
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([contentId])
+  @@index([userId, contentId])
+  @@index([interactionType])
+}
+
+/// ContentScore: Computed alignment between user and content.
+model ContentScore {
+  id        String @id @default(cuid())
+  userId    String
+  contentId String
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  // Component scores (0-100)
+  psychAlignmentScore    Float @default(0)
+  aestheticAlignmentScore Float @default(0)
+  behavioralScore        Float @default(0)
+  subcultureFitScore     Float @default(0)
+
+  // Combined
+  overallScore Float @default(0) // 0-100
+
+  // User-facing
+  stars             Int     @default(3) // 1-5
+  highlight         Boolean @default(false)
+  deleteRecommended Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, contentId])
+  @@index([userId])
+  @@index([contentId])
+  @@index([overallScore])
+}
