@@ -32,6 +32,11 @@ import {
 } from '../constellations/types';
 import { constellationsConfig, getConstellationById } from '../constellations/config';
 import { clamp, normalizeWeights, entropy } from '../utils';
+import {
+  generateEnhancedInterpretation,
+  EnhancedConstellationResult,
+  BehavioralInput,
+} from '../constellation-interpretation';
 
 // =============================================================================
 // Types
@@ -49,6 +54,7 @@ interface ComputedProfile {
   profile: Omit<ConstellationProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
   explanation: ConstellationExplanation;
   result: FullResult;
+  enhanced?: EnhancedConstellationResult;
 }
 
 // =============================================================================
@@ -661,6 +667,64 @@ function buildFullResult(
   };
 
   return { summary, details };
+}
+
+// =============================================================================
+// Enhanced Interpretation Integration
+// =============================================================================
+
+/**
+ * Compute constellation profile with enhanced interpretation
+ *
+ * @param psychometric - User's psychometric profile
+ * @param aesthetic - User's aesthetic preferences
+ * @param interactionsSummary - Aggregated behavioral data (optional)
+ * @param behavioralInput - Additional behavioral input for enhanced analysis
+ * @returns Full result with enhanced interpretation
+ */
+export function computeEnhancedConstellationProfile(
+  psychometric: Omit<PsychometricProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
+  aesthetic: Omit<AestheticPreference, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
+  interactionsSummary?: UserInteractionsSummary,
+  behavioralInput?: BehavioralInput
+): ComputedProfile {
+  // Get base profile
+  const baseResult = computeConstellationProfile(psychometric, aesthetic, interactionsSummary);
+
+  // Build enhanced interpretation input
+  const interpretationTraits = {
+    openness: psychometric.openness,
+    conscientiousness: psychometric.conscientiousness,
+    extraversion: psychometric.extraversion,
+    agreeableness: psychometric.agreeableness,
+    neuroticism: psychometric.neuroticism,
+    noveltySeeking: psychometric.noveltySeeking,
+    aestheticSensitivity: psychometric.aestheticSensitivity,
+    riskTolerance: psychometric.riskTolerance,
+  };
+
+  const interpretationAesthetic = {
+    darknessPreference: aesthetic.darknessPreference,
+    complexityPreference: aesthetic.complexityPreference,
+    organicVsSynthetic: aesthetic.organicVsSynthetic,
+    minimalVsMaximal: aesthetic.minimalVsMaximal,
+    tempoCenter: (aesthetic.tempoRangeMin + aesthetic.tempoRangeMax) / 2,
+    energyCenter: (aesthetic.energyRangeMin + aesthetic.energyRangeMax) / 2,
+    acousticVsDigital: aesthetic.acousticVsDigital,
+  };
+
+  // Generate enhanced interpretation
+  const enhanced = generateEnhancedInterpretation(
+    baseResult.profile,
+    interpretationTraits,
+    interpretationAesthetic,
+    behavioralInput
+  );
+
+  return {
+    ...baseResult,
+    enhanced,
+  };
 }
 
 export default computeConstellationProfile;
