@@ -36,7 +36,8 @@ import { ComputedProfile } from '../scoring/constellation';
 import { RepresentationProfile } from '../representation/types';
 import { constellationsConfig } from '../constellations/config';
 import { ConstellationId } from '../constellations/types';
-import { ArchetypeId, ARCHETYPE_CONFIG, ARCHETYPE_IDS } from '../archetypes/config';
+import { ARCHETYPES } from '../archetypes/config';
+import { ArchetypeId, ARCHETYPE_IDS } from '../archetypes/types';
 import { EnneagramType, ENNEAGRAM_TYPE_INFO, ENNEAGRAM_TYPES, EnneagramProfile } from '../enneagram/types';
 
 // =============================================================================
@@ -705,7 +706,7 @@ export function exportAestheticProfileV2(
  * Build V2 archetype profile
  */
 function buildArchetypeProfileV2(data: ArchetypeInputV2): ArchetypeProfileV2 {
-  const primaryConfig = ARCHETYPE_CONFIG[data.primaryArchetypeId];
+  const primaryConfig = ARCHETYPES[data.primaryArchetypeId];
 
   // Get sorted secondary archetypes
   const sortedSecondary = Object.entries(data.archetypeBlendWeights)
@@ -714,7 +715,7 @@ function buildArchetypeProfileV2(data: ArchetypeInputV2): ArchetypeProfileV2 {
     .slice(0, 3)
     .map(([id, weight]) => ({
       id,
-      name: ARCHETYPE_CONFIG[id as ArchetypeId].name,
+      name: ARCHETYPES[id as ArchetypeId].name,
       weight,
     }));
 
