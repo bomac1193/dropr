@@ -155,7 +155,7 @@ const AURYN: ArchetypeConfig = {
 
   shareableHandle: '@auryn.light',
   hashTags: ['#AurynEnergy', '#TheEnlightened', '#GoldenHour', '#InnerGlow'],
-  viralHook: 'Your light isn't for dimming',
+  viralHook: "Your light isn't for dimming",
 
   exampleScenes: [
     'Sunrise over ancient temple ruins',
@@ -209,7 +209,7 @@ const PRISMAE: ArchetypeConfig = {
 
   shareableHandle: '@prismae.art',
   hashTags: ['#PrismaeEnergy', '#TheArtist', '#CreativeFlow', '#ColorTheory'],
-  viralHook: 'You don't just see the world—you remix it',
+  viralHook: "You don't just see the world—you remix it",
 
   exampleScenes: [
     'Paint-splattered studio bathed in natural light',
@@ -263,7 +263,7 @@ const SOLARA: ArchetypeConfig = {
 
   shareableHandle: '@solara.queen',
   hashTags: ['#SolaraEnergy', '#TheLeader', '#MainCharacter', '#BossEnergy'],
-  viralHook: 'You don't follow the light—you are the light',
+  viralHook: "You don't follow the light—you are the light",
 
   exampleScenes: [
     'Commanding a stage with spotlights blazing',
@@ -271,7 +271,7 @@ const SOLARA: ArchetypeConfig = {
     'Leading a team through creative breakthrough',
   ],
   creativePompts: [
-    'Design your empire's visual identity',
+    "Design your empire's visual identity",
     'Create a power anthem playlist',
     'Photograph yourself in your element',
   ],
@@ -317,7 +317,7 @@ const CRYPTA: ArchetypeConfig = {
 
   shareableHandle: '@crypta.hidden',
   hashTags: ['#CryptaEnergy', '#TheHermit', '#DigitalOccult', '#HiddenDepths'],
-  viralHook: 'Some things are precious because they're protected',
+  viralHook: "Some things are precious because they're protected",
 
   exampleScenes: [
     'Candlelit ritual in a velvet-draped room',
@@ -325,7 +325,7 @@ const CRYPTA: ArchetypeConfig = {
     'Ancient library with forbidden sections',
   ],
   creativePompts: [
-    'Design a secret society's visual language',
+    "Design a secret society's visual language",
     'Create an encrypted mood board',
     'Photograph light piercing total darkness',
   ],
@@ -371,7 +371,7 @@ const VERTEX: ArchetypeConfig = {
 
   shareableHandle: '@vertex.future',
   hashTags: ['#VertexEnergy', '#TheVisionary', '#FutureTech', '#Innovation'],
-  viralHook: 'You're not ahead of your time—the time hasn't caught up yet',
+  viralHook: "You're not ahead of your time—the time hasn't caught up yet",
 
   exampleScenes: [
     'Minimalist workspace with holographic displays',
@@ -425,7 +425,7 @@ const FLUXUS: ArchetypeConfig = {
 
   shareableHandle: '@fluxus.flow',
   hashTags: ['#FluxusEnergy', '#TheConnector', '#GoWithTheFlow', '#BridgeBuilder'],
-  viralHook: 'You don't fit in boxes—you dissolve them',
+  viralHook: "You don't fit in boxes—you dissolve them",
 
   exampleScenes: [
     'Global gathering where cultures collide and create',
