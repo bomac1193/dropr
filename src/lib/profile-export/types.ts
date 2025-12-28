@@ -565,10 +565,197 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
 };
 
 /** Profile schema version */
-export const PROFILE_VERSION = '1.0';
+export const PROFILE_VERSION = '2.0';
 
 /** Export options alias */
 export type ExportOptions = ExportConfig;
 
 /** Prompt style for AI generation */
 export type PromptStyle = 'stable-diffusion' | 'dalle' | 'midjourney' | 'musicgen' | 'generic';
+
+// =============================================================================
+// V2 Profile Export (with Archetypes + Enneagram)
+// =============================================================================
+
+/**
+ * V2 Aesthetic Profile Export
+ * Includes 8 viral archetypes, Enneagram, and cross-modal taste embeddings
+ */
+export interface AestheticProfileV2 {
+  /** Schema version */
+  version: '2.0';
+
+  /** Export timestamp */
+  exportedAt: string;
+
+  /** New archetype system (8 viral types) */
+  archetype: ArchetypeProfileV2;
+
+  /** Enneagram personality type */
+  enneagram: EnneagramProfileV2;
+
+  /** Cross-modal taste embedding for ML (128-dim) */
+  tasteEmbedding: TasteEmbedding;
+
+  /** Visual aesthetic preferences */
+  visual: VisualAestheticVector;
+
+  /** Sonic/audio preferences */
+  sonic: SonicAestheticVector;
+
+  /** Behavioral preferences */
+  behavioral: BehavioralVector;
+
+  /** Confidence metadata */
+  confidence: ConfidenceMetadataV2;
+
+  /** Raw scores for ML pipelines */
+  raw?: RawScoreExportV2;
+}
+
+/**
+ * V2 Archetype profile with 8 viral types
+ */
+export interface ArchetypeProfileV2 {
+  /** Primary archetype */
+  primary: {
+    id: string; // vespyr, ignyx, auryn, prismae, solara, crypta, vertex, fluxus
+    name: string;
+    title: string;
+    tagline: string;
+    viralHandle: string; // @VESPYR, @IGNYX, etc.
+  };
+
+  /** Blend weights across all 8 archetypes */
+  blendWeights: Record<string, number>;
+
+  /** Top 3 secondary influences */
+  secondary: Array<{
+    id: string;
+    name: string;
+    weight: number;
+  }>;
+
+  /** Identity narrative */
+  identityStatement: string;
+
+  /** Style keywords */
+  keywords: string[];
+
+  /** Color palette (primary + accent) */
+  colors: {
+    primary: string; // hex
+    accent: string; // hex
+    gradient: [string, string]; // start, end hex
+  };
+}
+
+/**
+ * V2 Enneagram profile
+ */
+export interface EnneagramProfileV2 {
+  /** Primary type (1-9) */
+  primary: {
+    type: number;
+    name: string;
+    title: string;
+  };
+
+  /** Wing type */
+  wing: {
+    type: number;
+    name: string;
+  } | null;
+
+  /** Tritype (heart, head, gut) */
+  tritype: [number, number, number];
+
+  /** Type scores for all 9 types */
+  typeScores: Record<number, number>;
+
+  /** Integration level */
+  integrationLevel: 'stress' | 'average' | 'growth';
+
+  /** Type confidence */
+  confidence: number;
+}
+
+/**
+ * Cross-modal taste embedding
+ */
+export interface TasteEmbedding {
+  /** 128-dimensional composite taste vector */
+  vector: number[];
+
+  /** Dimensionality */
+  dimensions: 128;
+
+  /** Embedding model version */
+  modelVersion: string;
+
+  /** Component contributions (for interpretability) */
+  components: {
+    psychometric: number; // weight of psychometric traits
+    visual: number; // weight of visual preferences
+    sonic: number; // weight of audio preferences
+    archetype: number; // weight of archetype affinity
+  };
+
+  /** Generation timestamp */
+  generatedAt: string;
+}
+
+/**
+ * V2 Confidence metadata with refinement info
+ */
+export interface ConfidenceMetadataV2 extends ConfidenceMetadata {
+  /** Whether refinement quiz was completed */
+  refinementApplied: boolean;
+
+  /** Confidence boost from refinement */
+  refinementBoost: number;
+
+  /** Per-dimension confidence */
+  dimensionConfidence: {
+    archetype: number;
+    enneagram: number;
+    visual: number;
+    sonic: number;
+    behavioral: number;
+  };
+}
+
+/**
+ * V2 Raw scores with archetype and enneagram
+ */
+export interface RawScoreExportV2 extends RawScoreExport {
+  /** Archetype blend weights */
+  archetypeWeights: Record<string, number>;
+
+  /** Enneagram type scores */
+  enneagramScores: Record<number, number>;
+
+  /** Component embeddings */
+  embeddings?: {
+    psychometric?: number[];
+    visual?: number[];
+    audio?: number[];
+  };
+}
+
+/**
+ * V2 Export configuration
+ */
+export interface ExportConfigV2 extends ExportConfig {
+  /** Include taste embedding */
+  includeTasteEmbedding?: boolean;
+
+  /** Include Enneagram data */
+  includeEnneagram?: boolean;
+
+  /** Include component embeddings in raw */
+  includeComponentEmbeddings?: boolean;
+
+  /** Embedding model to use */
+  embeddingModel?: 'local' | 'ml-service';
+}

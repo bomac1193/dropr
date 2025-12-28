@@ -28,6 +28,7 @@ model User {
   subcultureFits       UserSubcultureFit[]
   contentInteractions  UserContentInteraction[]
   contentScores        ContentScore[]
+  embedding            UserEmbedding?
 
   @@index([email])
 }
@@ -36,7 +37,7 @@ model User {
 // Psychometric Layer
 // =============================================================================
 
-/// PsychometricProfile: Big Five traits + extended taste-relevant traits.
+/// PsychometricProfile: Big Five traits + extended taste-relevant traits + Enneagram.
 /// All values normalized 0-1.
 model PsychometricProfile {
   id     String @id @default(cuid())
@@ -54,6 +55,16 @@ model PsychometricProfile {
   noveltySeeking       Float @default(0.5)
   aestheticSensitivity Float @default(0.5)
   riskTolerance        Float @default(0.5)
+
+  // Confidence scores for each trait
+  traitConfidence Json? // { [traitId]: 0-1 confidence }
+
+  // Enneagram (optional)
+  enneagramPrimary    Int?    // 1-9
+  enneagramWing       Int?    // Adjacent type (e.g., 4w5)
+  enneagramTritype    Int[]   @default([]) // [heart, head, gut]
+  enneagramTypeScores Json?   // { "1": 0.7, "2": 0.3, ... }
+  enneagramConfidence Float   @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,17 +111,30 @@ model ConstellationProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Legacy constellation system (27 constellations)
   primaryConstellationId String // ConstellationId (validated at app level)
   blendWeights           Json   // { [ConstellationId]: number }
 
-  subtasteIndex    Float @default(50) // 0-100, taste coherence
-  explorerScore    Float @default(50) // 0-100, novelty seeking behavior
+  // New archetype system (8 viral archetypes)
+  primaryArchetypeId     String? // ArchetypeId: vespyr, ignyx, auryn, prismae, solara, crypta, vertex, fluxus
+  archetypeBlendWeights  Json?   // { [ArchetypeId]: number }
+  migratedToArchetypes   Boolean @default(false)
+  migrationDate          DateTime?
+
+  // Derived scores
+  subtasteIndex     Float @default(50) // 0-100, taste coherence
+  explorerScore     Float @default(50) // 0-100, novelty seeking behavior
   earlyAdopterScore Float @default(50) // 0-100, trend adoption speed
+
+  // Identity
+  identityStatement String? // Generated narrative
+  shareableHandle   String? // e.g., @vespyr.sage
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([primaryConstellationId])
+  @@index([primaryArchetypeId])
 }
 
 // =============================================================================
@@ -182,6 +206,7 @@ model ContentItem {
   // Relations
   interactions UserContentInteraction[]
   scores       ContentScore[]
+  embedding    ContentEmbedding?
 
   @@index([type])
   @@index([subcultureId])
@@ -239,4 +264,92 @@ model ContentScore {
   @@index([userId])
   @@index([contentId])
   @@index([overallScore])
+}
+
+// =============================================================================
+// ML Embeddings
+// =============================================================================
+
+/// UserEmbedding: Cached taste embeddings for ML operations.
+model UserEmbedding {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Embeddings from different sources
+  psychometricEmbedding Float[] @default([]) // 64-dim from psychometrics
+  visualEmbedding       Float[] @default([]) // 512-dim from CLIP
+  audioEmbedding        Float[] @default([]) // 768-dim from Wav2Vec
+  compositeEmbedding    Float[] @default([]) // 128-dim unified taste
+
+  // Metadata
+  embeddingVersion Int      @default(1)
+  lastComputedAt   DateTime @default(now())
+  inputHash        String?  // Hash of inputs for cache invalidation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([embeddingVersion])
+}
+
+/// ContentEmbedding: Cached embeddings for content items.
+model ContentEmbedding {
+  id        String      @id @default(cuid())
+  contentId String      @unique
+  content   ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  embedding        Float[] @default([])
+  embeddingModel   String  @default("clip-vit-base-patch32")
+  embeddingVersion Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([embeddingVersion])
+}
+
+// =============================================================================
+// Quiz Sessions
+// =============================================================================
+
+/// QuizSession: Tracks quiz progress and answers.
+model QuizSession {
+  id     String  @id @default(cuid())
+  userId String?
+
+  status               String   @default("in_progress") // "in_progress" | "completed" | "abandoned"
+  selectedQuestions    Json     @default("[]") // Array of question IDs
+  answers              Json     @default("[]") // Array of { questionId, answer, timestamp }
+  currentQuestionIndex Int      @default(0)
+  totalQuestions       Int      @default(0)
+
+  // Results (populated on completion)
+  scoringResult Json? // Full ScoringResult object
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// =============================================================================
+// Profile History
+// =============================================================================
+
+/// ProfileHistory: Version tracking for user profiles.
+model ProfileHistory {
+  id          String @id @default(cuid())
+  userId      String
+  profileType String // "psychometric" | "aesthetic" | "constellation" | "archetype"
+
+  profileData Json   // Snapshot of profile at this point
+  version     Int    @default(1)
+  trigger     String @default("quiz_complete") // What caused this snapshot
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, profileType])
 }

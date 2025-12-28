@@ -6,11 +6,14 @@ import { SubtasteQuiz } from '@/components/quiz';
 import { AuthModal, useAuth } from '@/components/auth';
 import { ScoringResult } from '@/lib/quiz/scoring';
 import { UserPriorData } from '@/lib/quiz/adaptive-selection';
+import { User, LogIn, ArrowRight } from 'lucide-react';
 
 export default function QuizPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPreQuizAuth, setShowPreQuizAuth] = useState(false);
+  const [quizStarted, setQuizStarted] = useState(false);
   const [priorData, setPriorData] = useState<UserPriorData | undefined>();
   const [submittedUserId, setSubmittedUserId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,6 +104,19 @@ export default function QuizPage() {
     console.log(`Preliminary: ${constellation} at ${Math.round(confidence * 100)}% confidence`);
   };
 
+  const handlePreQuizAuthSuccess = () => {
+    setShowPreQuizAuth(false);
+    setQuizStarted(true);
+  };
+
+  const handleStartQuiz = () => {
+    setQuizStarted(true);
+  };
+
+  const handleLoginFirst = () => {
+    setShowPreQuizAuth(true);
+  };
+
   // Show loading while checking auth
   if (authLoading) {
     return (
@@ -117,6 +133,63 @@ export default function QuizPage() {
         <div className="w-8 h-8 border-2 border-neutral-600 border-t-violet-500 rounded-full animate-spin" />
         <p className="mt-4 text-neutral-400">Saving your constellation...</p>
       </div>
+    );
+  }
+
+  // Pre-quiz screen - show login option before starting (only for non-logged-in users)
+  if (!quizStarted && !user) {
+    return (
+      <>
+        <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center px-6">
+          <div className="max-w-md w-full text-center">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Ready to discover your taste?
+            </h1>
+            <p className="text-neutral-400 mb-8">
+              Take the Subtaste quiz to find your unique aesthetic constellation.
+            </p>
+
+            {/* Start Quiz Button */}
+            <button
+              onClick={handleStartQuiz}
+              className="w-full group inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full font-semibold text-lg hover:from-violet-500 hover:to-fuchsia-500 transition-all shadow-lg shadow-violet-500/25 mb-4"
+            >
+              Start Quiz
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-neutral-800" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-neutral-950 text-neutral-500">or</span>
+              </div>
+            </div>
+
+            {/* Login First Button */}
+            <button
+              onClick={handleLoginFirst}
+              className="w-full inline-flex items-center justify-center gap-3 px-8 py-4 bg-neutral-900 border border-neutral-700 rounded-full font-semibold text-lg hover:bg-neutral-800 hover:border-neutral-600 transition-all"
+            >
+              <LogIn className="w-5 h-5" />
+              Sign in first to save your results
+            </button>
+
+            <p className="text-neutral-600 text-sm mt-6">
+              Signing in lets you save your profile and retake the quiz anytime.
+            </p>
+          </div>
+        </div>
+
+        {/* Pre-quiz auth modal */}
+        <AuthModal
+          isOpen={showPreQuizAuth}
+          onClose={() => setShowPreQuizAuth(false)}
+          onSuccess={handlePreQuizAuthSuccess}
+          initialMode="login"
+        />
+      </>
     );
   }
 

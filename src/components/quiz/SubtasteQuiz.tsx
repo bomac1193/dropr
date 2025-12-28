@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Sparkles, Play, Pause, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   selectAdaptiveQuestions,
@@ -364,6 +364,8 @@ interface QuestionDisplayProps {
 }
 
 function QuestionDisplay({ question, selectedAnswerId, onSelect }: QuestionDisplayProps) {
+  const isAudioQuestion = question.type === 'audio';
+
   return (
     <div className="space-y-8">
       {/* Question text */}
@@ -371,11 +373,19 @@ function QuestionDisplay({ question, selectedAnswerId, onSelect }: QuestionDispl
         <h2 className="text-2xl md:text-3xl font-light leading-relaxed">
           {question.text}
         </h2>
-        {question.category && (
-          <span className="inline-block px-3 py-1 rounded-full bg-neutral-800 text-xs text-neutral-400 uppercase tracking-wider">
-            {question.category}
-          </span>
-        )}
+        <div className="flex items-center justify-center gap-2">
+          {isAudioQuestion && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-500/20 text-xs text-violet-300 uppercase tracking-wider">
+              <Volume2 className="w-3 h-3" />
+              Audio
+            </span>
+          )}
+          {question.category && (
+            <span className="inline-block px-3 py-1 rounded-full bg-neutral-800 text-xs text-neutral-400 uppercase tracking-wider">
+              {question.category}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Answers */}
@@ -387,14 +397,23 @@ function QuestionDisplay({ question, selectedAnswerId, onSelect }: QuestionDispl
             : 'grid-cols-1 md:grid-cols-2'
         )}
       >
-        {question.answers.map((answer) => (
-          <AnswerOption
-            key={answer.id}
-            answer={answer}
-            isSelected={selectedAnswerId === answer.id}
-            onSelect={() => onSelect(answer.id)}
-          />
-        ))}
+        {question.answers.map((answer) =>
+          isAudioQuestion && answer.audioUrl ? (
+            <AudioAnswerOption
+              key={answer.id}
+              answer={answer}
+              isSelected={selectedAnswerId === answer.id}
+              onSelect={() => onSelect(answer.id)}
+            />
+          ) : (
+            <AnswerOption
+              key={answer.id}
+              answer={answer}
+              isSelected={selectedAnswerId === answer.id}
+              onSelect={() => onSelect(answer.id)}
+            />
+          )
+        )}
       </div>
     </div>
   );
@@ -419,6 +438,143 @@ function AnswerOption({ answer, isSelected, onSelect }: AnswerOptionProps) {
     >
       <span className="text-lg">{answer.text}</span>
     </button>
+  );
+}
+
+interface AudioAnswerOptionProps {
+  answer: ItemAnswer;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function AudioAnswerOption({ answer, isSelected, onSelect }: AudioAnswerOptionProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(answer.audioDurationMs ? answer.audioDurationMs / 1000 : 0);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const currentProgress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(currentProgress);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setProgress(0);
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div
+      onClick={onSelect}
+      className={cn(
+        'p-5 rounded-xl border-2 cursor-pointer transition-all',
+        isSelected
+          ? 'border-violet-500 bg-violet-500/10'
+          : 'border-neutral-800 hover:border-neutral-600'
+      )}
+    >
+      {/* Hidden audio element */}
+      <audio
+        ref={audioRef}
+        src={answer.audioUrl}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+        preload="metadata"
+      />
+
+      <div className="space-y-3">
+        {/* Answer text */}
+        <span className={cn(
+          'text-lg block',
+          isSelected ? 'text-white' : 'text-neutral-300'
+        )}>
+          {answer.text}
+        </span>
+
+        {/* Audio player UI */}
+        <div className="flex items-center gap-3">
+          {/* Play/Pause button */}
+          <button
+            onClick={togglePlay}
+            className={cn(
+              'w-10 h-10 rounded-full flex items-center justify-center transition-colors',
+              isSelected
+                ? 'bg-violet-500 hover:bg-violet-400 text-white'
+                : 'bg-neutral-700 hover:bg-neutral-600 text-neutral-300'
+            )}
+          >
+            {isPlaying ? (
+              <Pause className="w-4 h-4" />
+            ) : (
+              <Play className="w-4 h-4 ml-0.5" />
+            )}
+          </button>
+
+          {/* Waveform visualization / progress bar */}
+          <div className="flex-1 relative">
+            {/* Static waveform bars */}
+            <div className="flex items-center gap-0.5 h-8">
+              {Array.from({ length: 32 }).map((_, i) => {
+                const barHeight = Math.sin((i / 32) * Math.PI * 3) * 0.5 + 0.5;
+                const isActive = (i / 32) * 100 <= progress;
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      'w-1 rounded-full transition-colors',
+                      isActive
+                        ? isSelected
+                          ? 'bg-violet-400'
+                          : 'bg-neutral-400'
+                        : isSelected
+                        ? 'bg-violet-500/30'
+                        : 'bg-neutral-700'
+                    )}
+                    style={{ height: `${barHeight * 100}%` }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Duration */}
+          <span className="text-xs text-neutral-500 w-10 text-right">
+            {formatTime(duration)}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 

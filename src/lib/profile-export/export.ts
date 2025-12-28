@@ -15,13 +15,20 @@
 
 import {
   AestheticProfileV1,
+  AestheticProfileV2,
   ArchetypeSummary,
+  ArchetypeProfileV2,
+  EnneagramProfileV2,
+  TasteEmbedding,
   VisualAestheticVector,
   SonicAestheticVector,
   BehavioralVector,
   ConfidenceMetadata,
+  ConfidenceMetadataV2,
   RawScoreExport,
+  RawScoreExportV2,
   ExportConfig,
+  ExportConfigV2,
   DEFAULT_EXPORT_CONFIG,
 } from './types';
 
@@ -29,6 +36,8 @@ import { ComputedProfile } from '../scoring/constellation';
 import { RepresentationProfile } from '../representation/types';
 import { constellationsConfig } from '../constellations/config';
 import { ConstellationId } from '../constellations/types';
+import { ArchetypeId, ARCHETYPE_CONFIG, ARCHETYPE_IDS } from '../archetypes/config';
+import { EnneagramType, ENNEAGRAM_TYPE_INFO, ENNEAGRAM_TYPES, EnneagramProfile } from '../enneagram/types';
 
 // =============================================================================
 // Input Types
@@ -568,6 +577,460 @@ function deriveEarlyAdopterScore(psychometric: PsychometricInput): number {
  */
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+// =============================================================================
+// V2 Export Function (with Archetypes + Enneagram)
+// =============================================================================
+
+/**
+ * V2 Input for archetypes
+ */
+interface ArchetypeInputV2 {
+  primaryArchetypeId: ArchetypeId;
+  archetypeBlendWeights: Record<ArchetypeId, number>;
+  refinementApplied?: boolean;
+}
+
+/**
+ * V2 Input for Enneagram
+ */
+interface EnneagramInputV2 {
+  primaryType: EnneagramType;
+  wing: EnneagramType | null;
+  tritype: [EnneagramType, EnneagramType, EnneagramType];
+  typeScores: Record<EnneagramType, number>;
+  integrationLevel: 'stress' | 'average' | 'growth';
+  confidence: number;
+}
+
+/**
+ * Default V2 export config
+ */
+const DEFAULT_EXPORT_CONFIG_V2: ExportConfigV2 = {
+  ...DEFAULT_EXPORT_CONFIG,
+  includeTasteEmbedding: true,
+  includeEnneagram: true,
+  includeComponentEmbeddings: false,
+  embeddingModel: 'local',
+};
+
+/**
+ * Export aesthetic profile V2 with archetypes and Enneagram
+ *
+ * @param computedProfile - Constellation profile (for legacy compatibility)
+ * @param psychometric - Psychometric traits
+ * @param aesthetic - Aesthetic preferences
+ * @param archetypeData - V2 archetype data
+ * @param enneagramData - V2 enneagram data
+ * @param representation - Optional representation profile
+ * @param behavioral - Optional behavioral data
+ * @param confidence - Optional confidence metadata
+ * @param config - V2 export configuration
+ * @returns V2 aesthetic profile
+ */
+export function exportAestheticProfileV2(
+  computedProfile: ComputedProfile,
+  psychometric: PsychometricInput,
+  aesthetic: AestheticInput,
+  archetypeData: ArchetypeInputV2,
+  enneagramData?: EnneagramInputV2,
+  representation?: RepresentationProfile,
+  behavioral?: BehavioralInput,
+  confidence?: ConfidenceInput,
+  config: ExportConfigV2 = DEFAULT_EXPORT_CONFIG_V2
+): AestheticProfileV2 {
+  const now = new Date().toISOString();
+
+  // Build archetype profile
+  const archetypeProfile = buildArchetypeProfileV2(archetypeData);
+
+  // Build enneagram profile
+  const enneagramProfile = enneagramData
+    ? buildEnneagramProfileV2(enneagramData)
+    : buildDefaultEnneagramProfile(psychometric);
+
+  // Build taste embedding
+  const tasteEmbedding = buildTasteEmbedding(
+    psychometric,
+    aesthetic,
+    archetypeData,
+    enneagramData
+  );
+
+  // Reuse V1 builders for visual, sonic, behavioral
+  const visual = buildVisualVector(aesthetic, psychometric);
+  const sonic = buildSonicVector(aesthetic, representation);
+  const behavioralVector = buildBehavioralVector(
+    psychometric,
+    representation,
+    behavioral,
+    computedProfile
+  );
+
+  // Build V2 confidence metadata
+  const confidenceMetadata = buildConfidenceMetadataV2(
+    confidence,
+    behavioral,
+    archetypeData.refinementApplied ?? false,
+    enneagramData?.confidence ?? 0.5
+  );
+
+  const profile: AestheticProfileV2 = {
+    version: '2.0',
+    exportedAt: now,
+    archetype: archetypeProfile,
+    enneagram: enneagramProfile,
+    tasteEmbedding,
+    visual,
+    sonic,
+    behavioral: behavioralVector,
+    confidence: confidenceMetadata,
+  };
+
+  // Optionally include raw scores
+  if (config.includeRaw) {
+    profile.raw = buildRawExportV2(
+      computedProfile,
+      psychometric,
+      archetypeData,
+      enneagramData
+    );
+  }
+
+  return profile;
+}
+
+/**
+ * Build V2 archetype profile
+ */
+function buildArchetypeProfileV2(data: ArchetypeInputV2): ArchetypeProfileV2 {
+  const primaryConfig = ARCHETYPE_CONFIG[data.primaryArchetypeId];
+
+  // Get sorted secondary archetypes
+  const sortedSecondary = Object.entries(data.archetypeBlendWeights)
+    .filter(([id]) => id !== data.primaryArchetypeId)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([id, weight]) => ({
+      id,
+      name: ARCHETYPE_CONFIG[id as ArchetypeId].name,
+      weight,
+    }));
+
+  // Build identity statement
+  let identityStatement = `You are ${primaryConfig.name}, ${primaryConfig.title}.`;
+  if (sortedSecondary.length > 0) {
+    identityStatement += ` Your energy blends with ${sortedSecondary[0].name} undertones.`;
+  }
+
+  return {
+    primary: {
+      id: data.primaryArchetypeId,
+      name: primaryConfig.name,
+      title: primaryConfig.title,
+      tagline: primaryConfig.tagline,
+      viralHandle: primaryConfig.viralHandle,
+    },
+    blendWeights: data.archetypeBlendWeights,
+    secondary: sortedSecondary,
+    identityStatement,
+    keywords: primaryConfig.keywords,
+    colors: {
+      primary: primaryConfig.colors.primary,
+      accent: primaryConfig.colors.accent,
+      gradient: primaryConfig.colors.gradient,
+    },
+  };
+}
+
+/**
+ * Build V2 enneagram profile
+ */
+function buildEnneagramProfileV2(data: EnneagramInputV2): EnneagramProfileV2 {
+  const primaryInfo = ENNEAGRAM_TYPE_INFO[data.primaryType];
+  const wingInfo = data.wing ? ENNEAGRAM_TYPE_INFO[data.wing] : null;
+
+  return {
+    primary: {
+      type: data.primaryType,
+      name: primaryInfo.name,
+      title: primaryInfo.title,
+    },
+    wing: wingInfo
+      ? {
+          type: data.wing!,
+          name: wingInfo.name,
+        }
+      : null,
+    tritype: data.tritype,
+    typeScores: data.typeScores,
+    integrationLevel: data.integrationLevel,
+    confidence: data.confidence,
+  };
+}
+
+/**
+ * Build default enneagram from psychometrics (fallback)
+ */
+function buildDefaultEnneagramProfile(
+  psychometric: PsychometricInput
+): EnneagramProfileV2 {
+  // Simple mapping based on dominant traits
+  let primaryType: EnneagramType = 5;
+
+  // High conscientiousness + moderate neuroticism = Type 1
+  if (psychometric.conscientiousness > 0.7 && psychometric.neuroticism > 0.4) {
+    primaryType = 1;
+  }
+  // High agreeableness + high extraversion = Type 2
+  else if (psychometric.agreeableness > 0.7 && psychometric.extraversion > 0.6) {
+    primaryType = 2;
+  }
+  // High extraversion + low neuroticism = Type 7
+  else if (psychometric.extraversion > 0.7 && psychometric.neuroticism < 0.4) {
+    primaryType = 7;
+  }
+  // High openness + low extraversion = Type 4 or 5
+  else if (psychometric.openness > 0.7 && psychometric.extraversion < 0.4) {
+    primaryType = psychometric.neuroticism > 0.5 ? 4 : 5;
+  }
+
+  const primaryInfo = ENNEAGRAM_TYPE_INFO[primaryType];
+  const defaultScores: Record<EnneagramType, number> = {
+    1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5, 5: 0.5, 6: 0.5, 7: 0.5, 8: 0.5, 9: 0.5,
+  };
+  defaultScores[primaryType] = 0.8;
+
+  return {
+    primary: {
+      type: primaryType,
+      name: primaryInfo.name,
+      title: primaryInfo.title,
+    },
+    wing: null,
+    tritype: [3, 5, 9], // Default tritype
+    typeScores: defaultScores,
+    integrationLevel: 'average',
+    confidence: 0.3, // Low confidence for default
+  };
+}
+
+/**
+ * Build 128-dimensional taste embedding
+ */
+function buildTasteEmbedding(
+  psychometric: PsychometricInput,
+  aesthetic: AestheticInput,
+  archetypeData: ArchetypeInputV2,
+  enneagramData?: EnneagramInputV2
+): TasteEmbedding {
+  // Component weights for the composite embedding
+  const componentWeights = {
+    psychometric: 0.3,
+    visual: 0.25,
+    sonic: 0.25,
+    archetype: 0.2,
+  };
+
+  // Build 128-dim vector from components
+  // Psychometric: 32 dims (8 traits * 4 projections)
+  const psychometricEmbedding = buildPsychometricEmbedding(psychometric);
+
+  // Visual: 32 dims (derived from aesthetic)
+  const visualEmbedding = buildVisualEmbeddingFromAesthetic(aesthetic);
+
+  // Sonic: 32 dims (derived from aesthetic)
+  const sonicEmbedding = buildSonicEmbeddingFromAesthetic(aesthetic);
+
+  // Archetype: 32 dims (derived from blend weights)
+  const archetypeEmbedding = buildArchetypeEmbedding(
+    archetypeData,
+    enneagramData
+  );
+
+  // Concatenate and normalize
+  const rawVector = [
+    ...psychometricEmbedding,
+    ...visualEmbedding,
+    ...sonicEmbedding,
+    ...archetypeEmbedding,
+  ];
+
+  // L2 normalize
+  const norm = Math.sqrt(rawVector.reduce((sum, v) => sum + v * v, 0));
+  const vector = norm > 0 ? rawVector.map((v) => v / norm) : rawVector;
+
+  return {
+    vector,
+    dimensions: 128,
+    modelVersion: 'subtaste-local-v1',
+    components: componentWeights,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Build 32-dim psychometric embedding
+ */
+function buildPsychometricEmbedding(psychometric: PsychometricInput): number[] {
+  const traits = [
+    psychometric.openness,
+    psychometric.conscientiousness,
+    psychometric.extraversion,
+    psychometric.agreeableness,
+    psychometric.neuroticism,
+    psychometric.noveltySeeking,
+    psychometric.aestheticSensitivity,
+    psychometric.riskTolerance,
+  ];
+
+  // Create 4 projections per trait
+  const embedding: number[] = [];
+  for (const trait of traits) {
+    embedding.push(trait); // Raw
+    embedding.push(trait * trait); // Squared
+    embedding.push(Math.sin(trait * Math.PI)); // Sinusoidal
+    embedding.push(trait - 0.5); // Centered
+  }
+
+  return embedding;
+}
+
+/**
+ * Build 32-dim visual embedding from aesthetic
+ */
+function buildVisualEmbeddingFromAesthetic(aesthetic: AestheticInput): number[] {
+  const features = [
+    aesthetic.darknessPreference,
+    aesthetic.complexityPreference,
+    aesthetic.symmetryPreference,
+    aesthetic.organicVsSynthetic,
+    aesthetic.minimalVsMaximal,
+    1 - aesthetic.darknessPreference, // Light preference
+    aesthetic.complexityPreference * aesthetic.symmetryPreference, // Structured complexity
+    (1 - aesthetic.organicVsSynthetic) * aesthetic.complexityPreference, // Organic complexity
+  ];
+
+  // Expand to 32 dims with transformations
+  const embedding: number[] = [];
+  for (const feature of features) {
+    embedding.push(feature);
+    embedding.push(Math.cos(feature * Math.PI * 2));
+    embedding.push(feature * (1 - feature) * 4); // Parabolic
+    embedding.push(feature > 0.5 ? 1 : -1); // Binary
+  }
+
+  return embedding;
+}
+
+/**
+ * Build 32-dim sonic embedding from aesthetic
+ */
+function buildSonicEmbeddingFromAesthetic(aesthetic: AestheticInput): number[] {
+  const tempoNorm = (aesthetic.tempoRangeMin + aesthetic.tempoRangeMax) / 2 / 180;
+  const energyNorm = (aesthetic.energyRangeMin + aesthetic.energyRangeMax) / 2;
+
+  const features = [
+    tempoNorm,
+    energyNorm,
+    aesthetic.harmonicDissonanceTolerance,
+    aesthetic.rhythmPreference,
+    aesthetic.acousticVsDigital,
+    tempoNorm * energyNorm, // Dance factor
+    aesthetic.rhythmPreference * energyNorm, // Groove factor
+    aesthetic.harmonicDissonanceTolerance * (1 - aesthetic.acousticVsDigital), // Experimental acoustic
+  ];
+
+  const embedding: number[] = [];
+  for (const feature of features) {
+    embedding.push(feature);
+    embedding.push(Math.sin(feature * Math.PI));
+    embedding.push(feature * feature);
+    embedding.push(2 * feature - 1); // Centered [-1, 1]
+  }
+
+  return embedding;
+}
+
+/**
+ * Build 32-dim archetype embedding
+ */
+function buildArchetypeEmbedding(
+  archetypeData: ArchetypeInputV2,
+  enneagramData?: EnneagramInputV2
+): number[] {
+  // 8 archetype weights (expand to 16)
+  const archetypeWeights = ARCHETYPE_IDS.map(
+    (id) => archetypeData.archetypeBlendWeights[id] ?? 0
+  );
+
+  // 9 enneagram weights (take 16)
+  const enneagramWeights = enneagramData
+    ? ENNEAGRAM_TYPES.map((t) => enneagramData.typeScores[t] ?? 0.5)
+    : Array(9).fill(0.5);
+
+  // Combine: 8 archetype + 8 archetype squared + 9 enneagram + 7 derived
+  const embedding: number[] = [
+    ...archetypeWeights,
+    ...archetypeWeights.map((w) => w * w),
+    ...enneagramWeights,
+    // Derived features (7 to make 32 total)
+    archetypeWeights.reduce((a, b) => a + b, 0) / 8, // Mean archetype
+    Math.max(...archetypeWeights) - archetypeWeights.reduce((a, b) => a + b, 0) / 8, // Max deviation
+    enneagramWeights.reduce((a, b) => a + b, 0) / 9, // Mean enneagram
+    Math.max(...enneagramWeights), // Dominant enneagram
+    enneagramData?.confidence ?? 0.5, // Enneagram confidence
+    archetypeData.refinementApplied ? 1 : 0, // Refinement flag
+    archetypeWeights[0] * enneagramWeights[4], // Cross-interaction example
+  ];
+
+  return embedding;
+}
+
+/**
+ * Build V2 confidence metadata
+ */
+function buildConfidenceMetadataV2(
+  confidence?: ConfidenceInput,
+  behavioral?: BehavioralInput,
+  refinementApplied: boolean = false,
+  enneagramConfidence: number = 0.5
+): ConfidenceMetadataV2 {
+  const baseConfidence = buildConfidenceMetadata(confidence, behavioral);
+  const refinementBoost = refinementApplied ? 0.1 : 0;
+
+  return {
+    ...baseConfidence,
+    overall: Math.min(1, baseConfidence.overall + refinementBoost),
+    refinementApplied,
+    refinementBoost,
+    dimensionConfidence: {
+      archetype: Math.min(1, baseConfidence.overall + (refinementApplied ? 0.15 : 0)),
+      enneagram: enneagramConfidence,
+      visual: baseConfidence.traitConfidence['aestheticSensitivity'] ?? 0.7,
+      sonic: baseConfidence.traitConfidence['openness'] ?? 0.7,
+      behavioral: behavioral ? 0.8 : 0.5,
+    },
+  };
+}
+
+/**
+ * Build V2 raw export
+ */
+function buildRawExportV2(
+  computedProfile: ComputedProfile,
+  psychometric: PsychometricInput,
+  archetypeData: ArchetypeInputV2,
+  enneagramData?: EnneagramInputV2
+): RawScoreExportV2 {
+  const baseRaw = buildRawExport(computedProfile, psychometric);
+
+  return {
+    ...baseRaw,
+    archetypeWeights: archetypeData.archetypeBlendWeights,
+    enneagramScores: enneagramData?.typeScores ?? {},
+  };
 }
 
 export default exportAestheticProfile;
