@@ -3,267 +3,428 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ResultSummaryCard } from '@/components/results/ResultSummaryCard';
-import { ResultDetailsAccordion } from '@/components/results/ResultDetailsAccordion';
-import { FullResult } from '@/lib/types/results';
+import { Share2, RefreshCw, Sparkles, LogIn, Trash2, LogOut } from 'lucide-react';
+import { ARCHETYPES } from '@/lib/archetypes/config';
+import { ArchetypeId, ARCHETYPE_IDS } from '@/lib/archetypes/types';
+import { AuthModal, useAuth } from '@/components/auth';
+
+interface ArchetypeResult {
+  primaryArchetypeId: ArchetypeId;
+  archetypeBlendWeights: Partial<Record<ArchetypeId, number>>;
+  subtasteIndex: number;
+  explorerScore: number;
+  earlyAdopterScore: number;
+  identityStatement: string;
+  shareableHandle: string;
+}
+
+interface EnneagramResult {
+  primaryType: number;
+  wing: number | null;
+  tritype: [number, number, number];
+  confidence: number;
+}
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [result, setResult] = useState<FullResult | null>(null);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [archetype, setArchetype] = useState<ArchetypeResult | null>(null);
+  const [enneagram, setEnneagram] = useState<EnneagramResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      const userId = localStorage.getItem('subtaste_user_id');
-      if (!userId) {
-        router.push('/quiz');
-        return;
+    // Load results from localStorage
+    const userId = localStorage.getItem('subtaste_user_id');
+    const archetypeData = localStorage.getItem('subtaste_archetype');
+    const enneagramData = localStorage.getItem('subtaste_enneagram');
+
+    if (!userId || !archetypeData) {
+      router.push('/quiz');
+      return;
+    }
+
+    try {
+      setArchetype(JSON.parse(archetypeData));
+      if (enneagramData) {
+        setEnneagram(JSON.parse(enneagramData));
       }
+    } catch (e) {
+      console.error('Failed to parse results:', e);
+      router.push('/quiz');
+      return;
+    }
 
-      try {
-        // Recompute profile with latest interactions
-        const response = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId }),
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.result) {
-          setResult(data.result);
-        } else {
-          // Fall back to stored result or generate demo
-          setResult(generateDemoResult());
-        }
-      } catch (err) {
-        console.error('Failed to fetch results:', err);
-        // Use demo data for development
-        setResult(generateDemoResult());
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchResults();
+    setLoading(false);
   }, [router]);
 
-  const handleSceneClick = (scene: string) => {
-    console.log('Scene clicked:', scene);
-    // Could navigate to filtered content or generate prompts
+  const handleClearData = async () => {
+    // Clear localStorage
+    localStorage.removeItem('subtaste_user_id');
+    localStorage.removeItem('subtaste_archetype');
+    localStorage.removeItem('subtaste_enneagram');
+
+    // If logged in, sign out
+    if (user) {
+      await signOut();
+    }
+
+    // Redirect to quiz
+    router.push('/quiz');
   };
 
-  if (loading) {
+  const handleSignOut = async () => {
+    await signOut();
+    // Keep the results visible, just sign out
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    // Results are already saved via the quiz submission
+    // The user is now logged in and their data persists
+  };
+
+  if (loading || authLoading || !archetype) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-neutral-600 border-t-violet-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-neutral-500">Computing your constellation...</p>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <Sparkles className="w-12 h-12 text-violet-500 mx-auto" />
+          </motion.div>
+          <p className="text-neutral-500 mt-4">Loading your results...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !result) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">{error || 'Failed to load results'}</p>
-          <button
-            onClick={() => router.push('/quiz')}
-            className="px-6 py-2 bg-violet-600 rounded-lg hover:bg-violet-500 transition-colors"
-          >
-            Retake Quiz
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const primaryConfig = ARCHETYPES[archetype.primaryArchetypeId];
+  const primaryScore = archetype.archetypeBlendWeights[archetype.primaryArchetypeId] || 0;
+
+  // Get secondary archetypes (top 2 after primary)
+  const secondaryArchetypes = ARCHETYPE_IDS
+    .filter(id => id !== archetype.primaryArchetypeId)
+    .map(id => ({ id, weight: archetype.archetypeBlendWeights[id] || 0 }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 2);
+
+  const handleShare = async () => {
+    const shareText = `I'm ${primaryConfig.displayName} - ${primaryConfig.title} on Subtaste! ${primaryConfig.tagline}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `I'm ${primaryConfig.displayName} on Subtaste`,
+          text: shareText,
+          url: window.location.href,
+        });
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(shareText);
+      alert('Copied to clipboard!');
+    }
+  };
+
+  const handleRetake = () => {
+    localStorage.removeItem('subtaste_archetype');
+    localStorage.removeItem('subtaste_enneagram');
+    router.push('/quiz');
+  };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-neutral-950/80 backdrop-blur-lg border-b border-neutral-800 px-6 py-4">
-        <h1 className="text-xl font-semibold text-center">Your Subtaste Profile</h1>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Your Taste DNA</h1>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-neutral-400">{user.email?.split('@')[0]}</span>
+              <button
+                onClick={handleSignOut}
+                className="text-neutral-500 hover:text-white transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign in
+            </button>
+          )}
+        </div>
       </header>
 
-      {/* Content */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="max-w-2xl mx-auto px-4 py-6 space-y-6"
-      >
-        {/* Summary Card */}
-        <ResultSummaryCard summary={result.summary} onSceneClick={handleSceneClick} />
-
-        {/* Details Accordion */}
-        <div className="pt-4">
-          <h2 className="text-lg font-medium mb-4 text-center text-neutral-400">
-            Deep Dive
-          </h2>
-          <ResultDetailsAccordion details={result.details} />
-        </div>
-
-        {/* Action buttons */}
-        <div className="pt-8 flex flex-col gap-3">
-          <button
-            onClick={() => router.push('/feed')}
-            className="w-full py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-medium hover:from-violet-500 hover:to-fuchsia-500 transition-all"
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Login prompt for non-authenticated users */}
+        {!user && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-violet-900/20 border border-violet-800/50 rounded-xl p-4 mb-6 text-center"
           >
-            Explore Your Feed
-          </button>
-          <button
-            onClick={() => router.push('/swipe')}
-            className="w-full py-3 bg-neutral-800 rounded-xl text-neutral-300 hover:bg-neutral-700 transition-colors"
-          >
-            Refine with More Swipes
-          </button>
-          <button
-            onClick={() => {
-              // Share functionality
-              if (navigator.share) {
-                navigator.share({
-                  title: `I'm ${result.summary.primaryName} on Subtaste`,
-                  text: result.summary.tagline,
-                  url: window.location.href,
-                });
-              }
+            <p className="text-sm text-violet-300 mb-2">
+              Sign in to save your results and access them anytime
+            </p>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-medium transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign in to save
+            </button>
+          </motion.div>
+        )}
+
+        {/* Primary Archetype Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 p-8 mb-6"
+        >
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              background: `linear-gradient(135deg, ${primaryConfig.colorPalette[0]} 0%, ${primaryConfig.colorPalette[2]} 100%)`
             }}
-            className="w-full py-3 bg-neutral-800 rounded-xl text-neutral-300 hover:bg-neutral-700 transition-colors"
-          >
-            Share Your Constellation
-          </button>
-        </div>
-      </motion.div>
+          />
 
-      {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-neutral-950/80 backdrop-blur-lg border-t border-neutral-800 px-6 py-4">
-        <div className="flex justify-around max-w-md mx-auto">
-          <button
-            onClick={() => router.push('/swipe')}
-            className="text-neutral-500 hover:text-white transition-colors"
+          <div className="relative z-10">
+            {/* Emoji & Name */}
+            <div className="text-center mb-6">
+              <span className="text-6xl mb-4 block">{primaryConfig.emoji}</span>
+              <h2 className="text-4xl font-black tracking-tight mb-2">
+                {primaryConfig.displayName}
+              </h2>
+              <p className="text-xl text-neutral-300">{primaryConfig.title}</p>
+            </div>
+
+            {/* Tagline */}
+            <p className="text-center text-lg text-neutral-400 italic mb-6">
+              "{primaryConfig.tagline}"
+            </p>
+
+            {/* Match Score */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-neutral-800/50 rounded-full px-6 py-2">
+                <span className="text-neutral-400 text-sm">Match: </span>
+                <span className="text-white font-bold">
+                  {Math.round(primaryScore * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-neutral-300 leading-relaxed text-center max-w-lg mx-auto">
+              {primaryConfig.shortDescription}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Secondary Archetypes */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider mb-3 text-center">
+            Your Blend
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {secondaryArchetypes.map(({ id, weight }) => {
+              const config = ARCHETYPES[id];
+              return (
+                <div
+                  key={id}
+                  className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4 text-center"
+                >
+                  <span className="text-2xl mb-2 block">{config.emoji}</span>
+                  <p className="font-semibold text-sm">{config.displayName}</p>
+                  <p className="text-neutral-500 text-xs">{config.title}</p>
+                  <p className="text-neutral-400 text-sm mt-1">
+                    {Math.round(weight * 100)}%
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Viral Hook */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-gradient-to-r from-violet-900/30 to-fuchsia-900/30 border border-violet-800/50 rounded-xl p-6 mb-6 text-center"
+        >
+          <p className="text-lg font-medium text-white">
+            {primaryConfig.viralHook}
+          </p>
+          <p className="text-sm text-violet-400 mt-2">
+            {primaryConfig.shareableHandle}
+          </p>
+        </motion.div>
+
+        {/* Keywords */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-6"
+        >
+          <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider mb-3 text-center">
+            Your Aesthetic Keywords
+          </h3>
+          <div className="flex flex-wrap justify-center gap-2">
+            {[...primaryConfig.visualKeywords.slice(0, 4), ...primaryConfig.musicKeywords.slice(0, 4)].map((keyword, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 bg-neutral-800/50 border border-neutral-700 rounded-full text-sm text-neutral-300"
+              >
+                {keyword}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Example Scenes */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-8"
+        >
+          <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider mb-3 text-center">
+            Your Scenes
+          </h3>
+          <div className="space-y-2">
+            {primaryConfig.exampleScenes.map((scene, i) => (
+              <div
+                key={i}
+                className="bg-neutral-900/30 border border-neutral-800 rounded-lg p-4 text-center text-neutral-300"
+              >
+                {scene}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Enneagram (if available) */}
+        {enneagram && enneagram.primaryType && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6 mb-8"
           >
-            Swipe
-          </button>
+            <h3 className="text-sm font-medium text-neutral-500 uppercase tracking-wider mb-3 text-center">
+              Enneagram Profile
+            </h3>
+            <div className="text-center">
+              <p className="text-2xl font-bold">
+                Type {enneagram.primaryType}
+                {enneagram.wing && <span className="text-neutral-400">w{enneagram.wing}</span>}
+              </p>
+              {enneagram.tritype && Array.isArray(enneagram.tritype) && (
+                <p className="text-neutral-400 text-sm mt-1">
+                  Tritype: {enneagram.tritype.join('-')}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="space-y-3"
+        >
           <button
-            onClick={() => router.push('/feed')}
-            className="text-neutral-500 hover:text-white transition-colors"
+            onClick={handleShare}
+            className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all"
           >
-            Feed
+            <Share2 className="w-5 h-5" />
+            Share Your Archetype
           </button>
-          <button className="text-violet-400 font-medium">Profile</button>
+
+          <button
+            onClick={handleRetake}
+            className="w-full flex items-center justify-center gap-3 py-4 bg-neutral-800 rounded-xl text-neutral-300 hover:bg-neutral-700 transition-colors"
+          >
+            <RefreshCw className="w-5 h-5" />
+            Retake Quiz
+          </button>
+
+          {/* Clear Data Button */}
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            className="w-full flex items-center justify-center gap-3 py-3 text-neutral-500 hover:text-red-400 transition-colors text-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear all my data
+          </button>
+        </motion.div>
+
+        {/* Hashtags */}
+        <div className="mt-8 text-center">
+          <p className="text-neutral-600 text-sm">
+            {primaryConfig.hashTags.join(' ')}
+          </p>
         </div>
-      </nav>
+      </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+        initialMode="login"
+      />
+
+      {/* Clear Data Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-sm w-full"
+          >
+            <h3 className="text-xl font-bold mb-2">Clear all data?</h3>
+            <p className="text-neutral-400 mb-6">
+              This will delete your quiz results and sign you out. You'll need to retake the quiz to get new results.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 py-3 bg-neutral-800 rounded-xl hover:bg-neutral-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearData}
+                className="flex-1 py-3 bg-red-600 rounded-xl hover:bg-red-500 transition-colors"
+              >
+                Clear Data
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
-}
-
-/**
- * Generate demo result for development/demo purposes
- */
-function generateDemoResult(): FullResult {
-  return {
-    summary: {
-      primaryConstellationId: 'somnexis',
-      primaryName: 'Somnexis',
-      tagline:
-        'Dreamy and introspective, drawn to liminal spaces and hazy aesthetics. You find beauty in the threshold between waking and sleeping.',
-      keyScores: {
-        subtasteIndex: 72,
-        explorerScore: 68,
-        earlyAdopterScore: 61,
-      },
-      topScenes: [
-        'Somnexis club night: fog machines and slowed-down tracks',
-        'Somnexis AI cover art: dreamlike portraits with soft blur',
-        'Somnexis bedroom setup: fairy lights and gauze curtains',
-      ],
-    },
-    details: {
-      personality: {
-        traits: {
-          openness: 0.82,
-          conscientiousness: 0.45,
-          extraversion: 0.32,
-          agreeableness: 0.68,
-          neuroticism: 0.55,
-          noveltySeeking: 0.71,
-          aestheticSensitivity: 0.89,
-          riskTolerance: 0.48,
-        },
-        narrative:
-          'You are deeply curious, highly attuned to beauty, drawn to the new and unexplored, introspective and internally rich. This aligns with Somnexis\'s essence of hazy and soft-focus aesthetics.',
-      },
-      aesthetic: {
-        visualSliders: {
-          darkToBright: 0.35,
-          minimalToMaximal: 0.45,
-          organicToSynthetic: 0.4,
-        },
-        musicSliders: {
-          slowToFast: 0.25,
-          softToIntense: 0.35,
-          acousticToDigital: 0.55,
-        },
-        narrative:
-          'Your aesthetic DNA centers on moody, dark visuals, layered complexity. Sonically, you gravitate toward slow, contemplative tempos, electronic production. This maps to Somnexis\'s profile: ambient, slow, ethereal.',
-      },
-      subculture: {
-        topConstellations: [
-          {
-            id: 'somnexis',
-            name: 'Somnexis',
-            affinityScore: 85,
-            earlyAdopterScore: 61,
-            summary: 'Dreamy and introspective, drawn to liminal spaces.',
-          },
-          {
-            id: 'astryde',
-            name: 'Astryde',
-            affinityScore: 68,
-            earlyAdopterScore: 55,
-            summary: 'Cosmic and vast, drawn to space aesthetics.',
-          },
-          {
-            id: 'chromyne',
-            name: 'Chromyne',
-            affinityScore: 62,
-            earlyAdopterScore: 58,
-            summary: 'Color-synesthetic and sensation-driven.',
-          },
-          {
-            id: 'obscyra',
-            name: 'Obscyra',
-            affinityScore: 55,
-            earlyAdopterScore: 52,
-            summary: 'Refined darkness with theatrical flair.',
-          },
-          {
-            id: 'opalith',
-            name: 'Opalith',
-            affinityScore: 48,
-            earlyAdopterScore: 45,
-            summary: 'Subtle and shifting, drawn to iridescence.',
-          },
-        ],
-        narrative:
-          'Your taste constellation centers on Somnexis, with threads connecting to Somnexis, Astryde, Chromyne. You\'re likely to resonate with scenes like Somnexis club night.',
-      },
-      prompts: {
-        creativeHooks: [
-          'Design a Somnexis-inspired room',
-          'Create a Somnexis mood playlist',
-          'Generate Somnexis AI artwork: hazy, soft-focus',
-          'Style a Somnexis look for Somnexis club night',
-        ],
-        contentPrompts: [
-          'Find more hazy imagery',
-          'Discover ambient music',
-          'Explore darker, moodier aesthetics',
-          'Explore Somnexis-adjacent constellations',
-        ],
-      },
-    },
-  };
 }

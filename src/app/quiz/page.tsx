@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 import { ModernQuiz } from '@/components/quiz/ModernQuiz';
 import { AuthModal, useAuth } from '@/components/auth';
 import { LogIn, ArrowRight, Sparkles } from 'lucide-react';
-import { computeArchetypeScores } from '@/lib/archetypes/scoring';
+import { computeArchetypeProfile } from '@/lib/archetypes/scoring';
 import { computeEnneagramProfile } from '@/lib/enneagram/scoring';
 
 export default function QuizPage() {
@@ -47,8 +47,8 @@ export default function QuizPage() {
         riskTolerance: traits.riskTolerance ?? 0.5,
       };
 
-      // Compute archetype scores
-      const archetypeResult = computeArchetypeScores({
+      // Compute archetype profile
+      const archetypeResult = computeArchetypeProfile({
         psychometric: psychometricInput,
       });
 
