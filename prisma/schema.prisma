@@ -1,5 +1,5 @@
-// Subtaste Prisma Schema
-// Multi-layer taste profile system with constellation mapping
+// DROPR Prisma Schema
+// AI Music Battle Platform with Taste Graph
 
 generator client {
   provider = "prisma-client-js"
@@ -7,349 +7,430 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // =============================================================================
-// User & Identity
+// Player & Identity (Roblox-linked)
 // =============================================================================
 
-model User {
-  id          String   @id @default(cuid())
-  email       String?  @unique
-  displayName String?
-  avatarUrl   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Player {
+  id            String   @id @default(cuid())
+  robloxUserId  BigInt   @unique
+  username      String
+  displayName   String?
+  avatarUrl     String?
+
+  // PULSE Profile
+  pulseProfile  PulseProfile?
+
+  // Stats
+  influenceScore    Float    @default(0)
+  totalTasteStakes  Float    @default(0)
+  hypePoints        Int      @default(0)
+  battleCount       Int      @default(0)
+  winCount          Int      @default(0)
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastActiveAt  DateTime @default(now())
 
   // Relations
-  psychometricProfile  PsychometricProfile?
-  aestheticPreference  AestheticPreference?
-  constellationProfile ConstellationProfile?
-  subcultureFits       UserSubcultureFit[]
-  contentInteractions  UserContentInteraction[]
-  contentScores        ContentScore[]
-  embedding            UserEmbedding?
+  battlesAsPlayer1  Battle[]    @relation("Player1")
+  battlesAsPlayer2  Battle[]    @relation("Player2")
+  votes             Vote[]
+  tasteStakes       TasteStake[]
+  remixSelections   RemixSelection[]
 
-  @@index([email])
+  @@index([robloxUserId])
+  @@index([username])
+  @@index([influenceScore])
 }
 
 // =============================================================================
-// Psychometric Layer
+// PULSE Profile (Taste Archetype System)
 // =============================================================================
 
-/// PsychometricProfile: Big Five traits + extended taste-relevant traits + Enneagram.
-/// All values normalized 0-1.
-model PsychometricProfile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PulseProfile {
+  id        String  @id @default(cuid())
+  playerId  String  @unique
+  player    Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
-  // Big Five (OCEAN)
-  openness          Float @default(0.5)
-  conscientiousness Float @default(0.5)
-  extraversion      Float @default(0.5)
-  agreeableness     Float @default(0.5)
-  neuroticism       Float @default(0.5)
+  // Primary archetype
+  archetype   PulseArchetype @default(CROWD_SURFER)
 
-  // Extended traits
-  noveltySeeking       Float @default(0.5)
-  aestheticSensitivity Float @default(0.5)
-  riskTolerance        Float @default(0.5)
-
-  // Confidence scores for each trait
-  traitConfidence Json? // { [traitId]: 0-1 confidence }
-
-  // Enneagram (optional)
-  enneagramPrimary    Int?    // 1-9
-  enneagramWing       Int?    // Adjacent type (e.g., 4w5)
-  enneagramTritype    Int[]   @default([]) // [heart, head, gut]
-  enneagramTypeScores Json?   // { "1": 0.7, "2": 0.3, ... }
-  enneagramConfidence Float   @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// =============================================================================
-// Aesthetic Layer
-// =============================================================================
-
-/// AestheticPreference: Visual and music preferences bridging psychometrics to content.
-model AestheticPreference {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Visual preferences
-  colorPaletteVector   Float[] @default([])
-  darknessPreference   Float   @default(0.5) // 0 = bright, 1 = dark
-  complexityPreference Float   @default(0.5) // 0 = minimal, 1 = complex
-  symmetryPreference   Float   @default(0.5) // 0 = asymmetric, 1 = symmetric
-  organicVsSynthetic   Float   @default(0.5) // 0 = organic, 1 = synthetic
-  minimalVsMaximal     Float   @default(0.5) // 0 = minimal, 1 = maximal
-
-  // Music preferences
-  tempoRangeMin               Float @default(80)  // BPM lower bound
-  tempoRangeMax               Float @default(140) // BPM upper bound
-  energyRangeMin              Float @default(0.3)
-  energyRangeMax              Float @default(0.7)
-  harmonicDissonanceTolerance Float @default(0.3) // 0 = consonant, 1 = dissonant
-  rhythmPreference            Float @default(0.5) // 0 = ambient, 1 = percussive
-  acousticVsDigital           Float @default(0.5) // 0 = acoustic, 1 = digital
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// =============================================================================
-// Constellation Layer
-// =============================================================================
-
-/// ConstellationProfile: User's archetypal taste cluster mapping.
-model ConstellationProfile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Legacy constellation system (27 constellations)
-  primaryConstellationId String // ConstellationId (validated at app level)
-  blendWeights           Json   // { [ConstellationId]: number }
-
-  // New archetype system (8 viral archetypes)
-  primaryArchetypeId     String? // ArchetypeId: vespyr, ignyx, auryn, prismae, solara, crypta, vertex, fluxus
-  archetypeBlendWeights  Json?   // { [ArchetypeId]: number }
-  migratedToArchetypes   Boolean @default(false)
-  migrationDate          DateTime?
+  // Taste vector (0-100 for each dimension)
+  energy              Float @default(50)  // Low energy → High energy
+  experimentalism     Float @default(50)  // Traditional → Experimental
+  culturalAlignment   Float @default(50)  // Underground → Mainstream
+  temporalTiming      Float @default(50)  // Early adopter → Late majority
+  emotionalIntensity  Float @default(50)  // Chill → Intense
+  rhythmComplexity    Float @default(50)  // Simple → Complex
+  productionPolish    Float @default(50)  // Lo-fi → Hi-fi
+  vocalsPreference    Float @default(50)  // Instrumental → Vocal-heavy
+  genreFluidity       Float @default(50)  // Purist → Genre-fluid
+  nostalgia           Float @default(50)  // Forward-looking → Retro
 
   // Derived scores
-  subtasteIndex     Float @default(50) // 0-100, taste coherence
-  explorerScore     Float @default(50) // 0-100, novelty seeking behavior
-  earlyAdopterScore Float @default(50) // 0-100, trend adoption speed
+  predictionAccuracy  Float @default(50)  // 0-100, how well they predict winners
+  trendsetterScore    Float @default(50)  // 0-100, early adoption of winning sounds
+  tasteCoherence      Float @default(50)  // 0-100, consistency of choices
 
-  // Identity
-  identityStatement String? // Generated narrative
-  shareableHandle   String? // e.g., @vespyr.sage
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([primaryConstellationId])
-  @@index([primaryArchetypeId])
-}
-
-// =============================================================================
-// Subculture Clusters
-// =============================================================================
-
-/// SubcultureCluster: Emergent or defined subculture for trend detection.
-model SubcultureCluster {
-  id               String   @id @default(cuid())
-  name             String   @unique
-  tags             String[]
-  embeddingVector  Float[]  @default([])
-  constellationHints String[] @default([]) // ConstellationIds with high affinity
+  // Metadata
+  battlesSinceUpdate  Int      @default(0)
+  lastComputedAt      DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  userFits UserSubcultureFit[]
-  content  ContentItem[]
-
-  @@index([name])
 }
 
-/// UserSubcultureFit: Tracks user-subculture relationship over time.
-model UserSubcultureFit {
-  id           String @id @default(cuid())
-  userId       String
-  subcultureId String
+enum PulseArchetype {
+  TRENDSETTER     // First to spot winners, high prediction accuracy
+  PURIST          // Deep genre knowledge, consistent taste
+  CHAOS_AGENT     // Loves upsets, experimental choices
+  CROWD_SURFER    // Goes with popular flow, high social alignment
+  ARCHITECT       // Appreciates production complexity
+  MOOD_SHIFTER    // Reads emotional energy, context-aware
+}
 
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subculture SubcultureCluster @relation(fields: [subcultureId], references: [id], onDelete: Cascade)
+// =============================================================================
+// Sound Library
+// =============================================================================
 
-  affinityScore     Float  @default(50) // 0-100
-  earlyAdopterScore Float  @default(50) // 0-100
-  adoptionStage     String @default("mid") // "early" | "mid" | "late"
+model Sound {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
 
-  firstSeenAt DateTime @default(now())
+  // Categorization
+  category    SoundCategory
+  rarity      SoundRarity   @default(COMMON)
+  tags        String[]      @default([])
+
+  // Audio data
+  audioUrl    String
+  duration    Int           // Duration in milliseconds
+  bpm         Float?
+  key         String?       // Musical key (e.g., "C minor")
+
+  // Metrics
+  useCount    Int           @default(0)
+  winRate     Float         @default(50)  // % of battles won when chosen
+  viralScore  Float         @default(0)   // 0-100
+
+  // Timestamps
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, subcultureId])
-  @@index([userId])
-  @@index([subcultureId])
+  // Relations
+  remixes     Remix[]
+  battles     Battle[]
+
+  @@index([category])
+  @@index([rarity])
+  @@index([viralScore])
+}
+
+enum SoundCategory {
+  BRAIN_ROT    // Skibidi, Grimace, Ohio memes
+  VIRAL        // Current trending sounds
+  CLASSIC      // Timeless/nostalgic
+  RARE         // Limited edition
+  SEASONAL     // Event-specific
+}
+
+enum SoundRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
 }
 
 // =============================================================================
-// Content & Interactions
+// AI-Generated Remixes
 // =============================================================================
 
-/// ContentItem: Any scoreable content piece (image, track, ai_artifact).
-model ContentItem {
-  id           String  @id @default(cuid())
-  type         String  // "image" | "track" | "ai_artifact"
-  title        String?
-  description  String?
-  thumbnailUrl String?
-  contentUrl   String?
+model Remix {
+  id          String      @id @default(cuid())
+  soundId     String
+  sound       Sound       @relation(fields: [soundId], references: [id], onDelete: Cascade)
 
-  featureEmbedding Float[] @default([])
-  tags             String[]
+  // Remix details
+  genre       RemixGenre
+  name        String
+  description String?
 
-  subcultureId String?
-  subculture   SubcultureCluster? @relation(fields: [subcultureId], references: [id], onDelete: SetNull)
+  // Audio data
+  audioUrl    String
+  duration    Int         // Duration in milliseconds
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // AI generation metadata
+  generatedBy String      @default("suno")  // suno, udio, stable-audio
+  prompt      String?     // AI prompt used
+  modelVersion String?
+
+  // Metrics
+  selectCount Int         @default(0)  // Times selected by players
+  winCount    Int         @default(0)  // Times this remix won
+  winRate     Float       @default(50)
+
+  createdAt   DateTime @default(now())
 
   // Relations
-  interactions UserContentInteraction[]
-  scores       ContentScore[]
-  embedding    ContentEmbedding?
+  selections  RemixSelection[]
 
-  @@index([type])
-  @@index([subcultureId])
+  @@unique([soundId, genre])
+  @@index([soundId])
+  @@index([genre])
 }
 
-/// UserContentInteraction: Logs every user-content touchpoint.
-model UserContentInteraction {
-  id        String @id @default(cuid())
-  userId    String
-  contentId String
-
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  content ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
-
-  interactionType String  // "view" | "like" | "dislike" | "save" | "share" | "skip"
-  rating          Int?    // 1-5 star rating
-  dwellTimeMs     Int?    // time spent viewing
-  source          String  // "quiz" | "swipe" | "feed"
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([contentId])
-  @@index([userId, contentId])
-  @@index([interactionType])
-}
-
-/// ContentScore: Computed alignment between user and content.
-model ContentScore {
-  id        String @id @default(cuid())
-  userId    String
-  contentId String
-
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  content ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
-
-  // Component scores (0-100)
-  psychAlignmentScore    Float @default(0)
-  aestheticAlignmentScore Float @default(0)
-  behavioralScore        Float @default(0)
-  subcultureFitScore     Float @default(0)
-
-  // Combined
-  overallScore Float @default(0) // 0-100
-
-  // User-facing
-  stars             Int     @default(3) // 1-5
-  highlight         Boolean @default(false)
-  deleteRecommended Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, contentId])
-  @@index([userId])
-  @@index([contentId])
-  @@index([overallScore])
+enum RemixGenre {
+  TRAP
+  HOUSE
+  DUBSTEP
+  PHONK
+  DRILL
+  HYPERPOP
+  JERSEY_CLUB
+  AMBIENT
 }
 
 // =============================================================================
-// ML Embeddings
+// Battle System
 // =============================================================================
 
-/// UserEmbedding: Cached taste embeddings for ML operations.
-model UserEmbedding {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Battle {
+  id              String       @id @default(cuid())
 
-  // Embeddings from different sources
-  psychometricEmbedding Float[] @default([]) // 64-dim from psychometrics
-  visualEmbedding       Float[] @default([]) // 512-dim from CLIP
-  audioEmbedding        Float[] @default([]) // 768-dim from Wav2Vec
-  compositeEmbedding    Float[] @default([]) // 128-dim unified taste
+  // Players
+  player1Id       String
+  player2Id       String
+  player1         Player       @relation("Player1", fields: [player1Id], references: [id])
+  player2         Player       @relation("Player2", fields: [player2Id], references: [id])
+
+  // Sound used
+  soundId         String
+  sound           Sound        @relation(fields: [soundId], references: [id])
+
+  // Battle state
+  status          BattleStatus @default(SELECTING)
+
+  // Timing
+  selectingEndsAt DateTime?
+  playingEndsAt   DateTime?
+  votingEndsAt    DateTime?
+
+  // Results
+  winnerId        String?
+  player1Votes    Int          @default(0)
+  player2Votes    Int          @default(0)
+  crowdEnergy     Float        @default(0)  // 0-100, engagement level
+
+  // Scene/Arena
+  scene           String       @default("warehouse_rave")
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  completedAt     DateTime?
+
+  // Relations
+  votes           Vote[]
+  remixSelections RemixSelection[]
+  tasteStakes     TasteStake[]
+
+  @@index([status])
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([createdAt])
+}
+
+enum BattleStatus {
+  MATCHING       // Finding opponent
+  SELECTING      // Players choosing remixes
+  PLAYING_P1     // Playing player 1's remix
+  PLAYING_P2     // Playing player 2's remix
+  VOTING         // Crowd voting
+  COMPLETED      // Battle finished
+  CANCELLED      // Battle cancelled
+}
+
+// =============================================================================
+// Remix Selections (Which remix each player chose)
+// =============================================================================
+
+model RemixSelection {
+  id        String   @id @default(cuid())
+  battleId  String
+  playerId  String
+  remixId   String
+
+  battle    Battle   @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id])
+  remix     Remix    @relation(fields: [remixId], references: [id])
+
+  selectedAt DateTime @default(now())
+
+  @@unique([battleId, playerId])
+  @@index([battleId])
+  @@index([playerId])
+}
+
+// =============================================================================
+// Voting
+// =============================================================================
+
+model Vote {
+  id        String   @id @default(cuid())
+  battleId  String
+  voterId   String
+
+  battle    Battle   @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  voter     Player   @relation(fields: [voterId], references: [id])
+
+  // Vote choice: which player's remix they preferred
+  votedFor  VoteChoice
 
   // Metadata
-  embeddingVersion Int      @default(1)
-  lastComputedAt   DateTime @default(now())
-  inputHash        String?  // Hash of inputs for cache invalidation
+  confidence Float    @default(50)  // 0-100, how confident voter was
+  votedAt    DateTime @default(now())
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([embeddingVersion])
+  @@unique([battleId, voterId])
+  @@index([battleId])
+  @@index([voterId])
 }
 
-/// ContentEmbedding: Cached embeddings for content items.
-model ContentEmbedding {
-  id        String      @id @default(cuid())
-  contentId String      @unique
-  content   ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
-
-  embedding        Float[] @default([])
-  embeddingModel   String  @default("clip-vit-base-patch32")
-  embeddingVersion Int     @default(1)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([embeddingVersion])
+enum VoteChoice {
+  PLAYER_1
+  PLAYER_2
 }
 
 // =============================================================================
-// Quiz Sessions
+// Taste Stakes (Training data value)
 // =============================================================================
 
-/// QuizSession: Tracks quiz progress and answers.
-model QuizSession {
-  id     String  @id @default(cuid())
-  userId String?
+model TasteStake {
+  id          String   @id @default(cuid())
+  playerId    String
+  battleId    String
 
-  status               String   @default("in_progress") // "in_progress" | "completed" | "abandoned"
-  selectedQuestions    Json     @default("[]") // Array of question IDs
-  answers              Json     @default("[]") // Array of { questionId, answer, timestamp }
-  currentQuestionIndex Int      @default(0)
-  totalQuestions       Int      @default(0)
+  player      Player   @relation(fields: [playerId], references: [id])
+  battle      Battle   @relation(fields: [battleId], references: [id], onDelete: Cascade)
 
-  // Results (populated on completion)
-  scoringResult Json? // Full ScoringResult object
+  // Stake value
+  influenceWeight     Float    @default(1.0)  // Based on player's influence
+  appreciationValue   Float    @default(0)    // Grows as AI improves
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Context
+  chosenRemixGenre    RemixGenre
+  wasWinner           Boolean  @default(false)
+  predictionCorrect   Boolean  @default(false)
 
-  @@index([userId])
-  @@index([status])
+  createdAt   DateTime @default(now())
+
+  @@unique([playerId, battleId])
+  @@index([playerId])
+  @@index([battleId])
+  @@index([appreciationValue])
 }
 
 // =============================================================================
-// Profile History
+// Matchmaking Queue
 // =============================================================================
 
-/// ProfileHistory: Version tracking for user profiles.
-model ProfileHistory {
-  id          String @id @default(cuid())
-  userId      String
-  profileType String // "psychometric" | "aesthetic" | "constellation" | "archetype"
+model MatchmakingQueue {
+  id          String   @id @default(cuid())
+  playerId    String   @unique
 
-  profileData Json   // Snapshot of profile at this point
-  version     Int    @default(1)
-  trigger     String @default("quiz_complete") // What caused this snapshot
+  // Matching preferences
+  minInfluence Float   @default(0)
+  maxInfluence Float   @default(100000)
+  preferredScene String?
 
-  createdAt DateTime @default(now())
+  // Queue timing
+  joinedAt    DateTime @default(now())
+  expiresAt   DateTime
 
-  @@index([userId])
-  @@index([userId, profileType])
+  @@index([joinedAt])
+}
+
+// =============================================================================
+// Leaderboard Snapshots
+// =============================================================================
+
+model LeaderboardSnapshot {
+  id          String   @id @default(cuid())
+
+  type        LeaderboardType
+  period      String   // "daily", "weekly", "all-time"
+
+  // Snapshot data (JSON array of {playerId, rank, score})
+  rankings    Json
+
+  createdAt   DateTime @default(now())
+
+  @@index([type, period])
+  @@index([createdAt])
+}
+
+enum LeaderboardType {
+  INFLUENCE       // By influence score
+  WIN_RATE        // By battle win rate
+  TRENDSETTER     // By prediction accuracy
+  HYPE            // By hype points
+}
+
+// =============================================================================
+// Daily Challenges
+// =============================================================================
+
+model DailyChallenge {
+  id          String   @id @default(cuid())
+
+  title       String
+  description String
+
+  // Challenge type
+  type        ChallengeType
+  targetValue Int         // e.g., "Win 3 battles" → 3
+
+  // Rewards
+  hypeReward  Int         @default(100)
+
+  // Active period
+  activeDate  DateTime    @db.Date
+
+  createdAt   DateTime    @default(now())
+
+  // Player completions
+  completions ChallengeCompletion[]
+
+  @@unique([activeDate, type])
+  @@index([activeDate])
+}
+
+model ChallengeCompletion {
+  id           String   @id @default(cuid())
+  challengeId  String
+  playerId     String
+
+  challenge    DailyChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  progress     Int      @default(0)
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([challengeId, playerId])
+  @@index([playerId])
+}
+
+enum ChallengeType {
+  WIN_BATTLES          // Win X battles
+  USE_SOUND_CATEGORY   // Use sounds from category X times
+  VOTE_IN_BATTLES      // Vote in X battles
+  USE_SPECIFIC_GENRE   // Select X remix genre
+  EARN_HYPE            // Earn X hype points
 }
