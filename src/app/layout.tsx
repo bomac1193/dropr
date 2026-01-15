@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Subtaste - Discover Your Aesthetic DNA",
-  description: "Take the quiz to discover your unique taste constellation and get personalized content recommendations.",
+  title: "DROPR - AI Music Battle Platform",
+  description: "Battle with AI-generated music remixes and discover your unique taste profile.",
 };
 
 export default function RootLayout({
