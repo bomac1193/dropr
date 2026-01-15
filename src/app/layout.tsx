@@ -1,36 +1,42 @@
 import type { Metadata } from "next";
-import { EB_Garamond, DM_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth";
 import "./globals.css";
 
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
+  weight: ["700"],
   display: "swap",
 });
 
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["700"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "DROPR | Drop heat. Prove your taste.",
-  description: "A timestamp for taste. A credential for curators. Not another playlist app—proof of what you knew before the algorithm caught up.",
-  keywords: ["music curation", "taste validation", "music discovery", "curator credential"],
+  title: "DROPR | Because Taste Pays",
+  description: "The first platform where music taste becomes equity. Battle with AI remixes, prove your judgment, earn stakes in the AI you're training.",
+  keywords: ["taste economy", "music curation", "AI music", "earn from taste", "roblox"],
   openGraph: {
-    title: "DROPR | Drop heat. Prove your taste.",
-    description: "A timestamp for taste. A credential for curators.",
+    title: "DROPR | Because Taste Pays",
+    description: "Your taste pays you. Literally. The first platform where music taste becomes equity.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DROPR | Drop heat. Prove your taste.",
-    description: "Your taste is valid.",
+    title: "DROPR | Because Taste Pays",
+    description: "Your taste pays you. Literally.",
   },
 };
 
@@ -41,7 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ebGaramond.variable} ${dmMono.variable}`}>
+      <body className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

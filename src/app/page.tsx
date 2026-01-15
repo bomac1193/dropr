@@ -30,161 +30,508 @@ export default function Home() {
   };
 
   return (
-    <main className="page-container">
+    <div className="min-h-screen" style={{ background: 'var(--outlaw-black)' }}>
 
-      {/* Header - Wordmark */}
-      <header className="animate delay-1" style={{ marginBottom: 'var(--space-5xl)' }}>
-        <span className="wordmark">DROPR</span>
-      </header>
+      {/* Hero Section */}
+      <section
+        className="min-h-screen flex flex-col justify-center items-center text-center px-8 relative overflow-hidden"
+        style={{ background: 'var(--hero-gradient)' }}
+      >
+        {/* Glow effect */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'var(--glow-gradient)', opacity: 0.5 }}
+        />
 
-      {/* Tagline */}
-      <section className="animate delay-2" style={{ marginBottom: 'var(--space-4xl)' }}>
-        <h1 className="hero-tagline">
-          Drop heat.<br />
-          <span style={{ color: 'var(--color-accent)' }}>Prove your taste.</span>
-        </h1>
-      </section>
-
-      {/* Manifesto Section */}
-      <section className="animate delay-3" style={{ marginBottom: 'var(--space-4xl)' }}>
-        <p className="section-label">Manifesto</p>
-
-        <div className="body-text" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-          <p>
-            <span className="body-emphasis">The problem isn't creation.</span>{' '}
-            100,000 tracks upload daily. 45 million have never been played once.
-            Algorithms optimize for engagement, not quality. The people who actually
-            find music first—the ones whose playlists get stolen, whose taste gets
-            mined—get nothing.
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <p
+            className="font-mono text-sm tracking-widest uppercase mb-8"
+            style={{ color: 'var(--electric-cyan)' }}
+          >
+            The Taste Economy Is Here
           </p>
 
-          <p>
-            <span className="body-emphasis">Human taste is the last scarce resource.</span>{' '}
-            In an age of infinite content, curation is creation. Your ear is an instrument.
-            Your judgment has value. The question isn't what to listen to—it's who decides
-            what's worth hearing.
+          <h1
+            className="font-display text-gradient-hero glow-headline mb-8"
+            style={{
+              fontSize: 'var(--h1-size)',
+              lineHeight: 'var(--h1-line-height)',
+              letterSpacing: 'var(--h1-letter-spacing)',
+              fontWeight: 'var(--h1-weight)'
+            }}
+          >
+            BECAUSE TASTE PAYS
+          </h1>
+
+          <p
+            className="mb-12 max-w-2xl mx-auto"
+            style={{
+              fontSize: 'var(--body-large)',
+              lineHeight: 'var(--body-large-line-height)',
+              color: 'var(--silver-mist)'
+            }}
+          >
+            The first platform where music taste becomes equity. Battle with AI remixes,
+            prove your judgment, earn stakes in the AI you're training.
           </p>
 
-          <p>
-            <span className="body-emphasis">We're building proof.</span>{' '}
-            A timestamp for taste. A record of what you knew before the algorithm caught up.
-            Not another playlist app—a credential for curators. If you're right about music,
-            we'll know. And eventually, so will everyone else.
-          </p>
-        </div>
-      </section>
-
-      {/* Gold Divider */}
-      <div className="animate delay-4 divider-gold" style={{ marginBottom: 'var(--space-3xl)' }} />
-
-      {/* For / Not For Grid */}
-      <section className="animate delay-5" style={{ marginBottom: 'var(--space-4xl)' }}>
-        <div className="for-grid">
-          {/* For Column */}
-          <div>
-            <p className="for-label">For</p>
-            <ul className="list-text" style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              color: 'var(--color-text)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-xs)'
-            }}>
-              <li>The unpaid A&R of every friend group</li>
-              <li>People who found artists before they were artists</li>
-              <li>Curators whose playlists get stolen</li>
-              <li>Anyone who cringes at "Discover Weekly"</li>
-            </ul>
-          </div>
-
-          {/* Not For Column */}
-          <div>
-            <p className="not-for-label">Not For</p>
-            <ul className="list-text" style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              color: 'var(--color-subtle)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-xs)'
-            }}>
-              <li>People who let algorithms decide</li>
-              <li>Passive listeners</li>
-              <li>Anyone satisfied with what's "trending"</li>
-              <li>Those who think music is "content"</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="animate delay-6" style={{ marginBottom: 'var(--space-4xl)' }}>
-        <p className="section-label-no-border">Early Access</p>
-
-        {status === 'success' ? (
-          <div className="success-box">
-            <p className="for-label" style={{ marginBottom: 'var(--space-sm)' }}>You're in</p>
-            <p className="body-text">
-              We'll be in touch. In the meantime, keep finding heat.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Your email"
-              className="cta-input"
-              disabled={status === 'loading'}
-              required
-              aria-label="Email address"
-              style={{ marginBottom: 'var(--space-lg)' }}
+              placeholder="Enter your email"
+              className="px-6 py-4 bg-transparent border-2 text-white placeholder-gray-500 focus:outline-none transition-colors w-full sm:w-80"
+              style={{
+                borderColor: 'rgba(0, 240, 255, 0.3)',
+                borderRadius: '8px'
+              }}
+              disabled={status === 'loading' || status === 'success'}
             />
             <button
               type="submit"
-              disabled={status === 'loading'}
-              className="cta-button"
-              style={{ marginBottom: 'var(--space-md)' }}
+              disabled={status === 'loading' || status === 'success'}
+              className="cta-primary"
             >
-              {status === 'loading' ? 'Joining...' : 'Get Early Access'}
+              {status === 'success' ? 'YOU\'RE IN' : status === 'loading' ? 'JOINING...' : 'START EARNING FROM YOUR TASTE'}
             </button>
-            <p className="micro-text" style={{ color: '#444444' }}>
-              Limited spots. We're building this with the first 1,000.
-            </p>
-            {status === 'error' && (
-              <p className="micro-text" style={{ color: '#AA4444', marginTop: 'var(--space-sm)' }}>
-                Something went wrong. Try again.
-              </p>
-            )}
           </form>
-        )}
+
+          {status === 'success' && (
+            <p style={{ color: 'var(--electric-cyan)' }} className="text-sm">Welcome to the taste economy.</p>
+          )}
+          {status === 'error' && (
+            <p style={{ color: 'var(--power-pink)' }} className="text-sm">Something went wrong. Try again.</p>
+          )}
+
+          <p className="scarcity-indicator mt-8">
+            Only 2,847 spots remaining
+          </p>
+        </div>
+      </section>
+
+      {/* Problem Section */}
+      <section className="px-8 py-24 md:py-32" style={{ background: 'var(--outlaw-black)' }}>
+        <div className="max-w-6xl mx-auto">
+          <p
+            className="font-mono text-sm tracking-widest uppercase mb-4"
+            style={{ color: 'var(--power-pink)' }}
+          >
+            The Problem
+          </p>
+
+          <h2
+            className="font-display mb-8"
+            style={{
+              fontSize: 'var(--h2-size)',
+              lineHeight: 'var(--h2-line-height)',
+              letterSpacing: 'var(--h2-letter-spacing)',
+              fontWeight: 'var(--h2-weight)',
+              color: 'var(--pure-white)'
+            }}
+          >
+            The $8.1 Billion Discovery Problem
+          </h2>
+
+          <p
+            className="mb-16 max-w-3xl"
+            style={{
+              fontSize: 'var(--body-large)',
+              lineHeight: 'var(--body-large-line-height)',
+              color: 'var(--silver-mist)'
+            }}
+          >
+            Labels spend billions trying to predict hits. They fail 90% of the time.
+            Meanwhile, millions of fans with perfect taste get nothing for the value they create.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="stat-card">
+              <span className="stat-number">100K</span>
+              <p
+                className="mt-4 text-center"
+                style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}
+              >
+                songs uploaded daily
+              </p>
+            </div>
+            <div className="stat-card">
+              <span className="stat-number">45M</span>
+              <p
+                className="mt-4 text-center"
+                style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}
+              >
+                tracks never heard once
+              </p>
+            </div>
+            <div className="stat-card">
+              <span className="stat-number">10%</span>
+              <p
+                className="mt-4 text-center"
+                style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}
+              >
+                A&R hit rate
+              </p>
+            </div>
+          </div>
+
+          <p
+            className="mt-12 text-center font-display"
+            style={{
+              fontSize: 'var(--h3-size)',
+              color: 'var(--power-pink)'
+            }}
+          >
+            The industry doesn't need more music. It needs better taste signals.
+          </p>
+        </div>
+      </section>
+
+      {/* Solution Section */}
+      <section
+        className="px-8 py-24 md:py-32"
+        style={{
+          background: 'linear-gradient(180deg, var(--midnight-blue) 0%, var(--outlaw-black) 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <p
+            className="font-mono text-sm tracking-widest uppercase mb-4"
+            style={{ color: 'var(--electric-cyan)' }}
+          >
+            The Solution
+          </p>
+
+          <h2
+            className="font-display mb-8"
+            style={{
+              fontSize: 'var(--h2-size)',
+              lineHeight: 'var(--h2-line-height)',
+              letterSpacing: 'var(--h2-letter-spacing)',
+              fontWeight: 'var(--h2-weight)',
+              color: 'var(--pure-white)'
+            }}
+          >
+            How Taste Becomes Currency
+          </h2>
+
+          <p
+            className="mb-16 max-w-3xl"
+            style={{
+              fontSize: 'var(--body-large)',
+              lineHeight: 'var(--body-large-line-height)',
+              color: 'var(--silver-mist)'
+            }}
+          >
+            DROPR transforms music curation from passive consumption into active investment.
+            Your choices train AI. Your accuracy earns equity.
+          </p>
+
+          <div className="space-y-8">
+            <div className="step-card">
+              <div className="flex items-start gap-6">
+                <span
+                  className="font-mono text-2xl font-bold"
+                  style={{ color: 'var(--electric-cyan)' }}
+                >
+                  01
+                </span>
+                <div>
+                  <h3
+                    className="font-display mb-2"
+                    style={{ fontSize: 'var(--h3-size)', fontWeight: 'var(--h3-weight)' }}
+                  >
+                    BATTLE
+                  </h3>
+                  <p style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}>
+                    Compete in head-to-head remix battles. AI generates unique versions. You choose the winner.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="step-card">
+              <div className="flex items-start gap-6">
+                <span
+                  className="font-mono text-2xl font-bold"
+                  style={{ color: 'var(--electric-cyan)' }}
+                >
+                  02
+                </span>
+                <div>
+                  <h3
+                    className="font-display mb-2"
+                    style={{ fontSize: 'var(--h3-size)', fontWeight: 'var(--h3-weight)' }}
+                  >
+                    PROVE
+                  </h3>
+                  <p style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}>
+                    Your choices are validated by the crowd. Build your taste score. Develop your unique profile.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="step-card">
+              <div className="flex items-start gap-6">
+                <span
+                  className="font-mono text-2xl font-bold"
+                  style={{ color: 'var(--electric-cyan)' }}
+                >
+                  03
+                </span>
+                <div>
+                  <h3
+                    className="font-display mb-2"
+                    style={{ fontSize: 'var(--h3-size)', fontWeight: 'var(--h3-weight)' }}
+                  >
+                    EARN
+                  </h3>
+                  <p style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}>
+                    Every battle trains our AI. Top curators earn equity stakes. Your taste literally pays you.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Proposition Section */}
+      <section className="px-8 py-24 md:py-32" style={{ background: 'var(--outlaw-black)' }}>
+        <div className="max-w-6xl mx-auto">
+          <p
+            className="font-mono text-sm tracking-widest uppercase mb-4 text-center"
+            style={{ color: 'var(--magician-purple)' }}
+          >
+            The Opportunity
+          </p>
+
+          <h2
+            className="font-display mb-16 text-center"
+            style={{
+              fontSize: 'var(--h2-size)',
+              lineHeight: 'var(--h2-line-height)',
+              letterSpacing: 'var(--h2-letter-spacing)',
+              fontWeight: 'var(--h2-weight)',
+              color: 'var(--pure-white)'
+            }}
+          >
+            Why Your Taste Is Worth Money
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="value-card">
+              <div
+                className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(123, 47, 190, 0.2)', border: '2px solid var(--magician-purple)' }}
+              >
+                <span className="text-2xl" style={{ color: 'var(--electric-cyan)' }}>01</span>
+              </div>
+              <h3
+                className="font-display mb-4"
+                style={{ fontSize: '24px', fontWeight: 700, color: 'var(--pure-white)' }}
+              >
+                First-Mover Advantage
+              </h3>
+              <p style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}>
+                Early curators get the highest equity allocation. The taste economy rewards pioneers.
+              </p>
+            </div>
+
+            <div className="value-card">
+              <div
+                className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(123, 47, 190, 0.2)', border: '2px solid var(--magician-purple)' }}
+              >
+                <span className="text-2xl" style={{ color: 'var(--electric-cyan)' }}>02</span>
+              </div>
+              <h3
+                className="font-display mb-4"
+                style={{ fontSize: '24px', fontWeight: 700, color: 'var(--pure-white)' }}
+              >
+                Proven Track Record
+              </h3>
+              <p style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}>
+                Your public taste score becomes your credential. Labels and artists can find you.
+              </p>
+            </div>
+
+            <div className="value-card">
+              <div
+                className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(123, 47, 190, 0.2)', border: '2px solid var(--magician-purple)' }}
+              >
+                <span className="text-2xl" style={{ color: 'var(--electric-cyan)' }}>03</span>
+              </div>
+              <h3
+                className="font-display mb-4"
+                style={{ fontSize: '24px', fontWeight: 700, color: 'var(--pure-white)' }}
+              >
+                Real Ownership
+              </h3>
+              <p style={{ color: 'var(--silver-mist)', fontSize: 'var(--body-regular)' }}>
+                Not points. Not rewards. Actual equity in the AI model your taste helps train.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof Section */}
+      <section
+        className="px-8 py-24 md:py-32"
+        style={{
+          background: 'linear-gradient(180deg, var(--dark-purple) 0%, var(--outlaw-black) 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <p
+            className="font-mono text-sm tracking-widest uppercase mb-4 text-center"
+            style={{ color: 'var(--power-pink)' }}
+          >
+            Early Curators
+          </p>
+
+          <h2
+            className="font-display mb-16 text-center"
+            style={{
+              fontSize: 'var(--h2-size)',
+              lineHeight: 'var(--h2-line-height)',
+              letterSpacing: 'var(--h2-letter-spacing)',
+              fontWeight: 'var(--h2-weight)',
+              color: 'var(--pure-white)'
+            }}
+          >
+            Taste Is Already Paying
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="testimonial-card">
+              <p
+                className="mb-6 italic"
+                style={{ fontSize: 'var(--body-large)', color: 'var(--silver-mist)' }}
+              >
+                "Finally, a platform that values what I actually know—not just what I consume.
+                My taste score is my new resume."
+              </p>
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 rounded-full"
+                  style={{ background: 'var(--cta-gradient)' }}
+                />
+                <div>
+                  <p className="font-display font-bold">@SoundHunter</p>
+                  <p style={{ color: 'var(--silver-mist)', fontSize: '14px' }}>Trendsetter Rank #47</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="testimonial-card">
+              <p
+                className="mb-6 italic"
+                style={{ fontSize: 'var(--body-large)', color: 'var(--silver-mist)' }}
+              >
+                "I've been discovering underground artists for years. Now I can prove it—and
+                earn from it. This changes everything."
+              </p>
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-12 h-12 rounded-full"
+                  style={{ background: 'var(--cta-gradient)' }}
+                />
+                <div>
+                  <p className="font-display font-bold">@BeatDigger</p>
+                  <p style={{ color: 'var(--silver-mist)', fontSize: '14px' }}>Chaos Agent Rank #12</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section
+        className="px-8 py-32 text-center relative overflow-hidden"
+        style={{ background: 'var(--hero-gradient)' }}
+      >
+        {/* Glow effect */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'var(--glow-gradient)', opacity: 0.3 }}
+        />
+
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <h2
+            className="font-display text-gradient-cta glow-pink mb-8"
+            style={{
+              fontSize: 'var(--h2-size)',
+              lineHeight: 'var(--h2-line-height)',
+              letterSpacing: 'var(--h2-letter-spacing)',
+              fontWeight: 'var(--h2-weight)'
+            }}
+          >
+            Because taste pays.
+          </h2>
+
+          <p
+            className="mb-12 max-w-2xl mx-auto"
+            style={{
+              fontSize: 'var(--body-large)',
+              lineHeight: 'var(--body-large-line-height)',
+              color: 'var(--silver-mist)'
+            }}
+          >
+            Join the first generation of compensated curators.
+            The taste economy won't wait.
+          </p>
+
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="px-6 py-4 bg-transparent border-2 text-white placeholder-gray-500 focus:outline-none transition-colors w-full sm:w-80"
+              style={{
+                borderColor: 'rgba(0, 240, 255, 0.3)',
+                borderRadius: '8px'
+              }}
+              disabled={status === 'loading' || status === 'success'}
+            />
+            <button
+              type="submit"
+              disabled={status === 'loading' || status === 'success'}
+              className="cta-primary"
+            >
+              {status === 'success' ? 'YOU\'RE IN' : status === 'loading' ? 'JOINING...' : 'CLAIM YOUR SPOT'}
+            </button>
+          </form>
+
+          <p className="scarcity-indicator">
+            Only 2,847 spots remaining
+          </p>
+        </div>
       </section>
 
       {/* Footer */}
       <footer
-        className="animate delay-7"
+        className="px-8 py-12 border-t"
         style={{
-          marginTop: 'var(--space-7xl)',
-          paddingTop: 'var(--space-xl)',
-          borderTop: '1px solid var(--color-border-subtle)'
+          background: 'var(--outlaw-black)',
+          borderColor: 'var(--dark-purple)'
         }}
       >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 'var(--space-md)'
-        }}>
-          <span className="footer-text">© 2025 DROPR</span>
-          <span className="footer-text">Your taste is valid.</span>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="font-display font-bold text-2xl" style={{ color: 'var(--pure-white)' }}>
+            DROPR
+          </p>
+          <p style={{ color: 'var(--silver-mist)', fontSize: '14px' }}>
+            Built by VIOLET SPHINX
+          </p>
         </div>
       </footer>
 
-    </main>
+    </div>
   );
 }
