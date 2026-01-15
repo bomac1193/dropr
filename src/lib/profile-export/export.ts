@@ -715,12 +715,12 @@ function buildArchetypeProfileV2(data: ArchetypeInputV2): ArchetypeProfileV2 {
     .slice(0, 3)
     .map(([id, weight]) => ({
       id,
-      name: ARCHETYPES[id as ArchetypeId].name,
+      name: ARCHETYPES[id as ArchetypeId].displayName,
       weight,
     }));
 
   // Build identity statement
-  let identityStatement = `You are ${primaryConfig.name}, ${primaryConfig.title}.`;
+  let identityStatement = `You are ${primaryConfig.displayName}, ${primaryConfig.title}.`;
   if (sortedSecondary.length > 0) {
     identityStatement += ` Your energy blends with ${sortedSecondary[0].name} undertones.`;
   }
@@ -728,19 +728,22 @@ function buildArchetypeProfileV2(data: ArchetypeInputV2): ArchetypeProfileV2 {
   return {
     primary: {
       id: data.primaryArchetypeId,
-      name: primaryConfig.name,
+      name: primaryConfig.displayName,
       title: primaryConfig.title,
       tagline: primaryConfig.tagline,
-      viralHandle: primaryConfig.viralHandle,
+      viralHandle: primaryConfig.shareableHandle,
     },
     blendWeights: data.archetypeBlendWeights,
     secondary: sortedSecondary,
     identityStatement,
-    keywords: primaryConfig.keywords,
+    keywords: primaryConfig.visualKeywords,
     colors: {
-      primary: primaryConfig.colors.primary,
-      accent: primaryConfig.colors.accent,
-      gradient: primaryConfig.colors.gradient,
+      primary: primaryConfig.colorPalette[0] || '#000000',
+      accent: primaryConfig.colorPalette[1] || '#ffffff',
+      gradient: [
+        primaryConfig.colorPalette[0] || '#000000',
+        primaryConfig.colorPalette[primaryConfig.colorPalette.length - 1] || '#ffffff',
+      ] as [string, string],
     },
   };
 }

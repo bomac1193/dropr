@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Share2, RefreshCw, Sparkles, LogIn, Trash2, LogOut } from 'lucide-react';
+import { RefreshCw, Sparkles, LogIn, Trash2, LogOut } from 'lucide-react';
 import { ARCHETYPES } from '@/lib/archetypes/config';
 import { ArchetypeId, ARCHETYPE_IDS } from '@/lib/archetypes/types';
 import { AuthModal, useAuth } from '@/components/auth';
+import { ShareButtons, InlineShareButtons } from '@/components/share';
 
 interface ArchetypeResult {
   primaryArchetypeId: ArchetypeId;
@@ -111,25 +112,9 @@ export default function ResultsPage() {
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 2);
 
-  const handleShare = async () => {
-    const shareText = `I'm ${primaryConfig.displayName} - ${primaryConfig.title} on Subtaste! ${primaryConfig.tagline}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `I'm ${primaryConfig.displayName} on Subtaste`,
-          text: shareText,
-          url: window.location.href,
-        });
-      } catch (e) {
-        // User cancelled or error
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareText);
-      alert('Copied to clipboard!');
-    }
-  };
+  const shareText = `I'm ${primaryConfig.displayName} - ${primaryConfig.title} on Subtaste! ${primaryConfig.tagline}`;
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareHashtags = primaryConfig.hashTags.map(h => h.replace('#', ''));
 
   const handleRetake = () => {
     localStorage.removeItem('subtaste_archetype');
@@ -354,13 +339,26 @@ export default function ResultsPage() {
           transition={{ delay: 0.6 }}
           className="space-y-3"
         >
-          <button
-            onClick={handleShare}
-            className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all"
-          >
-            <Share2 className="w-5 h-5" />
-            Share Your Archetype
-          </button>
+          <div className="w-full">
+            <ShareButtons
+              title={`I'm ${primaryConfig.displayName} on Subtaste`}
+              text={shareText}
+              url={shareUrl}
+              hashtags={shareHashtags}
+              via="subtaste"
+            />
+          </div>
+
+          {/* Quick share buttons */}
+          <div className="flex justify-center py-2">
+            <InlineShareButtons
+              title={`I'm ${primaryConfig.displayName} on Subtaste`}
+              text={shareText}
+              url={shareUrl}
+              hashtags={shareHashtags}
+              via="subtaste"
+            />
+          </div>
 
           <button
             onClick={handleRetake}
@@ -393,7 +391,7 @@ export default function ResultsPage() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onSuccess={handleAuthSuccess}
-        initialMode="login"
+        initialMode="signin"
       />
 
       {/* Clear Data Confirmation Modal */}

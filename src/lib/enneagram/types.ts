@@ -243,7 +243,7 @@ export function getTypeFromCenter(
   typeScores: Record<EnneagramType, number>
 ): EnneagramType {
   const centerTypes = ENNEAGRAM_CENTERS[center];
-  let maxType = centerTypes[0];
+  let maxType: EnneagramType = centerTypes[0];
   let maxScore = typeScores[maxType] || 0;
 
   for (const type of centerTypes) {

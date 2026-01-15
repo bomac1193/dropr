@@ -71,17 +71,17 @@ function generateRefinementQuestions(
     questions.push({
       id: 'archetype-disambig-1',
       text: `When facing a creative challenge, which approach resonates more?`,
-      context: `Differentiating ${primary.name} vs ${secondary.name}`,
+      context: `Differentiating ${primary.displayName} vs ${secondary.displayName}`,
       targetDimension: 'archetype',
       answers: [
         {
           id: 'a',
-          text: primary.keywords[0] ? `I lean into ${primary.keywords[0]} energy` : 'Follow my intuition deeply',
+          text: primary.visualKeywords[0] ? `I lean into ${primary.visualKeywords[0]} energy` : 'Follow my intuition deeply',
           archetypeWeights: { [primaryArchetype]: 0.2 },
         },
         {
           id: 'b',
-          text: secondary.keywords[0] ? `I embrace ${secondary.keywords[0]} vibes` : 'Explore multiple paths',
+          text: secondary.visualKeywords[0] ? `I embrace ${secondary.visualKeywords[0]} vibes` : 'Explore multiple paths',
           archetypeWeights: { [secondaryArchetype]: 0.2 },
         },
       ],

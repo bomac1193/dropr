@@ -192,7 +192,7 @@ export default function QuizPage() {
           isOpen={showPreQuizAuth}
           onClose={() => setShowPreQuizAuth(false)}
           onSuccess={handlePreQuizAuthSuccess}
-          initialMode="login"
+          initialMode="signin"
         />
       </>
     );

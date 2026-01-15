@@ -18,7 +18,15 @@ import {
   completeBattle,
   joinQueue,
   findMatch,
+  getBattle,
 } from '@/lib/battle';
+import {
+  emitBattleCreated,
+  emitRemixSelected,
+  emitBattleStateChanged,
+  emitVoteCast,
+  emitBattleCompleted,
+} from '@/lib/socket';
 
 // =============================================================================
 // Webhook Secret Verification
@@ -177,6 +185,16 @@ export async function POST(request: NextRequest) {
               soundId: sound.id,
             });
 
+            // Emit battle created socket event
+            emitBattleCreated({
+              battleId: battle.id,
+              player1Id: battle.player1Id,
+              player2Id: battle.player2Id,
+              soundId: battle.soundId,
+              scene: battle.scene,
+              selectingEndsAt: battle.selectingEndsAt?.toISOString() || '',
+            }).catch(() => {});
+
             // Get both players
             const player1 = await prisma.player.findUnique({
               where: { id: match.player1Id },
@@ -282,6 +300,26 @@ export async function POST(request: NextRequest) {
           include: { remixSelections: true },
         });
 
+        const bothSelected = battle?.remixSelections.length === 2;
+
+        // Emit socket event
+        emitRemixSelected({
+          battleId: selectionData.battleId,
+          playerId: selectionData.playerId,
+          remixId: selectionData.remixId,
+          bothSelected,
+        }).catch(() => {});
+
+        // If both selected, emit state change
+        if (bothSelected && battle?.status === 'PLAYING_P1') {
+          emitBattleStateChanged({
+            battleId: selectionData.battleId,
+            previousStatus: 'SELECTING',
+            newStatus: 'PLAYING_P1',
+            playingEndsAt: battle.playingEndsAt?.toISOString(),
+          }).catch(() => {});
+        }
+
         return NextResponse.json({
           success: true,
           action: 'remix_selected',
@@ -289,23 +327,57 @@ export async function POST(request: NextRequest) {
             selectionId: selection.id,
             remixGenre: selection.remix.genre,
             battleStatus: battle?.status,
-            bothSelected: battle?.remixSelections.length === 2,
+            bothSelected,
           },
         });
       }
 
       case 'advance_battle': {
         const battleData = BattleStateSchema.parse(data);
-        const battle = await advanceBattleState(battleData.battleId);
+
+        // Get battle before advancing to get previous status
+        const battleBefore = await prisma.battle.findUnique({
+          where: { id: battleData.battleId },
+        });
+        const previousStatus = battleBefore?.status || 'UNKNOWN';
+
+        const result = await advanceBattleState(battleData.battleId);
+
+        // advanceBattleState can return a Battle or BattleResult depending on state
+        const isBattleResult = 'battleId' in result;
+
+        if (isBattleResult) {
+          // Battle completed - emit completed event
+          emitBattleCompleted({
+            battleId: result.battleId,
+            winnerId: result.winnerId,
+            player1Votes: result.player1Votes,
+            player2Votes: result.player2Votes,
+            crowdEnergy: result.crowdEnergy,
+            player1HypeEarned: result.player1HypeEarned,
+            player2HypeEarned: result.player2HypeEarned,
+          }).catch(() => {});
+        } else {
+          // Battle advanced - emit state change
+          emitBattleStateChanged({
+            battleId: result.id,
+            previousStatus,
+            newStatus: result.status,
+            playingEndsAt: result.playingEndsAt?.toISOString(),
+            votingEndsAt: result.votingEndsAt?.toISOString(),
+          }).catch(() => {});
+        }
 
         return NextResponse.json({
           success: true,
-          action: 'battle_advanced',
-          data: {
-            battleId: battle.id,
-            status: battle.status,
-            votingEndsAt: battle.votingEndsAt,
-          },
+          action: isBattleResult ? 'battle_completed' : 'battle_advanced',
+          data: isBattleResult
+            ? result
+            : {
+                battleId: result.id,
+                status: result.status,
+                votingEndsAt: result.votingEndsAt,
+              },
         });
       }
 
@@ -316,6 +388,22 @@ export async function POST(request: NextRequest) {
           voteData.voterId,
           voteData.votedFor
         );
+
+        // Get updated vote counts
+        const battle = await getBattle(voteData.battleId);
+        if (battle) {
+          const player1VoteCount = battle.votes.filter(v => v.votedFor === 'PLAYER_1').length;
+          const player2VoteCount = battle.votes.filter(v => v.votedFor === 'PLAYER_2').length;
+
+          // Emit socket event
+          emitVoteCast({
+            battleId: voteData.battleId,
+            voterId: voteData.voterId,
+            votedFor: voteData.votedFor,
+            player1VoteCount,
+            player2VoteCount,
+          }).catch(() => {});
+        }
 
         return NextResponse.json({
           success: true,
@@ -330,6 +418,17 @@ export async function POST(request: NextRequest) {
       case 'complete_battle': {
         const battleData = BattleStateSchema.parse(data);
         const result = await completeBattle(battleData.battleId);
+
+        // Emit socket event
+        emitBattleCompleted({
+          battleId: result.battleId,
+          winnerId: result.winnerId,
+          player1Votes: result.player1Votes,
+          player2Votes: result.player2Votes,
+          crowdEnergy: result.crowdEnergy,
+          player1HypeEarned: result.player1HypeEarned,
+          player2HypeEarned: result.player2HypeEarned,
+        }).catch(() => {});
 
         // Get winner details
         let winner = null;

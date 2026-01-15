@@ -22,7 +22,7 @@ function convertToPsychometricProfile(traits: Record<TraitId, TraitScore>) {
 }
 
 /**
- * Convert aesthetic to DB format (snake_case)
+ * Convert aesthetic from camelCase (app) to snake_case (DB)
  */
 function convertToAestheticPreference(aesthetic: ScoringResult['aesthetic']) {
   return {
@@ -130,37 +130,22 @@ export async function POST(request: NextRequest) {
 
     if (aestheticError) throw aestheticError;
 
-    // Compute constellation profile
-    const psychometricInput = {
-      openness: psychometric.openness,
-      conscientiousness: psychometric.conscientiousness,
-      extraversion: psychometric.extraversion,
-      agreeableness: psychometric.agreeableness,
-      neuroticism: psychometric.neuroticism,
-      noveltySeeking: psychometric.novelty_seeking,
-      aestheticSensitivity: psychometric.aesthetic_sensitivity,
-      riskTolerance: psychometric.risk_tolerance,
+    // Build camelCase inputs for constellation computation
+    const psychometricForCompute = {
+      openness: scoringResult.traits.openness?.score ?? 0.5,
+      conscientiousness: scoringResult.traits.conscientiousness?.score ?? 0.5,
+      extraversion: scoringResult.traits.extraversion?.score ?? 0.5,
+      agreeableness: scoringResult.traits.agreeableness?.score ?? 0.5,
+      neuroticism: scoringResult.traits.neuroticism?.score ?? 0.5,
+      noveltySeeking: scoringResult.traits.noveltySeeking?.score ?? 0.5,
+      aestheticSensitivity: scoringResult.traits.aestheticSensitivity?.score ?? 0.5,
+      riskTolerance: scoringResult.traits.riskTolerance?.score ?? 0.5,
     };
 
-    const aestheticInput = {
-      colorPaletteVector: aesthetic.color_palette_vector,
-      darknessPreference: aesthetic.darkness_preference,
-      complexityPreference: aesthetic.complexity_preference,
-      symmetryPreference: aesthetic.symmetry_preference,
-      organicVsSynthetic: aesthetic.organic_vs_synthetic,
-      minimalVsMaximal: aesthetic.minimal_vs_maximal,
-      tempoRangeMin: aesthetic.tempo_range_min,
-      tempoRangeMax: aesthetic.tempo_range_max,
-      energyRangeMin: aesthetic.energy_range_min,
-      energyRangeMax: aesthetic.energy_range_max,
-      harmonicDissonanceTolerance: aesthetic.harmonic_dissonance_tolerance,
-      rhythmPreference: aesthetic.rhythm_preference,
-      acousticVsDigital: aesthetic.acoustic_vs_digital,
-    };
-
+    // Compute constellation profile with camelCase inputs
     const { profile, result, enhanced } = computeConstellationProfile(
-      psychometricInput,
-      aestheticInput
+      psychometricForCompute,
+      scoringResult.aesthetic
     );
 
     // Upsert constellation profile
@@ -198,8 +183,8 @@ export async function POST(request: NextRequest) {
       user_id: finalUserId,
       profile_type: 'constellation',
       profile_data: {
-        psychometric: psychometricInput,
-        aesthetic: aestheticInput,
+        psychometric,
+        aesthetic,
         constellation: profile,
       },
       trigger: 'quiz_complete',

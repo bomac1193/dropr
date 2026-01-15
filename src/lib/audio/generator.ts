@@ -6,6 +6,7 @@
  */
 
 import OpenAI from 'openai';
+import { uploadAudio, generateRemixFilename } from './storage';
 
 // =============================================================================
 // Types
@@ -149,8 +150,22 @@ async function generateWithSuno(request: RemixRequest): Promise<GeneratedRemix |
 
     const data = await response.json();
 
+    // Download and re-upload to our storage for persistence
+    const filename = generateRemixFilename(request.soundName, request.genre, 'suno');
+    let audioUrl = data.audio_url;
+
+    try {
+      const audioResponse = await fetch(data.audio_url);
+      if (audioResponse.ok) {
+        const audioBlob = await audioResponse.blob();
+        audioUrl = await uploadAudioBlob(audioBlob, filename);
+      }
+    } catch (uploadError) {
+      console.warn('Failed to persist Suno audio, using original URL:', uploadError);
+    }
+
     return {
-      audioUrl: data.audio_url,
+      audioUrl,
       duration: (request.duration || 15) * 1000,
       genre: request.genre,
       name: `${request.soundName} (${request.genre} Remix)`,
@@ -199,7 +214,8 @@ async function generateWithStability(request: RemixRequest): Promise<GeneratedRe
 
     // Get audio as blob and upload to storage
     const audioBlob = await response.blob();
-    const audioUrl = await uploadAudioBlob(audioBlob, `remix_${Date.now()}.mp3`);
+    const filename = generateRemixFilename(request.soundName, request.genre, 'stability');
+    const audioUrl = await uploadAudioBlob(audioBlob, filename);
 
     return {
       audioUrl,
@@ -276,16 +292,18 @@ function generateMock(request: RemixRequest): GeneratedRemix {
 // =============================================================================
 
 async function uploadAudioBlob(blob: Blob, filename: string): Promise<string> {
-  // In production, upload to Supabase Storage or S3
-  // For now, return a placeholder URL
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  if (supabaseUrl) {
-    // TODO: Implement actual Supabase storage upload
-    return `${supabaseUrl}/storage/v1/object/public/audio/${filename}`;
+  try {
+    const result = await uploadAudio(blob, filename);
+    return result.url;
+  } catch (error) {
+    console.error('Failed to upload audio to storage:', error);
+    // Fallback to placeholder URL in case of upload failure
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl) {
+      return `${supabaseUrl}/storage/v1/object/public/audio/remixes/${filename}`;
+    }
+    return `https://storage.dropr.io/audio/${filename}`;
   }
-
-  return `https://storage.dropr.io/audio/${filename}`;
 }
 
 // =============================================================================

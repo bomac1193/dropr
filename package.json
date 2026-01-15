@@ -12,7 +12,10 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "socket": "tsx server/socket-server.ts",
+    "dev:all": "concurrently \"npm run dev\" \"npm run socket\"",
+    "test:e2e": "tsx scripts/test-battle-flow.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -30,6 +33,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.4.0",
     "uuid": "^11.0.4",
     "zod": "^3.24.1"
@@ -41,6 +45,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",

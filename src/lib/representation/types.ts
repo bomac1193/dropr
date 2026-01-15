@@ -106,6 +106,7 @@ export interface PsychometricInput {
  * Aesthetic preferences from quiz scoring
  */
 export interface AestheticInput {
+  colorPaletteVector?: number[];
   darknessPreference: number;
   complexityPreference: number;
   symmetryPreference: number;

@@ -134,10 +134,8 @@ export async function findMatch(
       maxInfluence: { gte: player.influenceScore - 50 },
       expiresAt: { gt: new Date() },
     },
-    include: {
-      // We need to join with Player, but Prisma doesn't have direct relation
-      // So we'll fetch players separately
-    },
+    // Note: MatchmakingQueue doesn't have a direct relation to Player
+    // We'll fetch players separately below
     orderBy: { joinedAt: 'asc' },
     take: 20,
   });

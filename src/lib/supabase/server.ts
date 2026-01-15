@@ -8,14 +8,28 @@ import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Get env vars with fallbacks for build time
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Check if we have valid Supabase configuration
+const hasValidSupabaseConfig =
+  supabaseUrl &&
+  !supabaseUrl.includes('[YOUR-PROJECT-REF]') &&
+  supabaseUrl.startsWith('https://') &&
+  supabaseAnonKey;
 
 /**
  * Create a Supabase client for Server Components
  * Reads auth session from cookies
  */
 export async function createServerClient() {
+  if (!hasValidSupabaseConfig) {
+    throw new Error(
+      'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
+    );
+  }
+
   const cookieStore = await cookies();
 
   return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {
@@ -42,6 +56,12 @@ export async function createServerClient() {
  * Bypasses RLS - use carefully!
  */
 export function createAdminClient() {
+  if (!hasValidSupabaseConfig) {
+    throw new Error(
+      'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL in .env.local'
+    );
+  }
+
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {

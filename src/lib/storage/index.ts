@@ -32,7 +32,8 @@
  */
 
 // Export storage client
-export { createStorageClient, StorageClient, StorageError } from './client';
+export { createStorageClient, StorageError } from './client';
+export type { StorageClient } from './client';
 
 // Export types
 export * from './types';
@@ -112,7 +113,9 @@ export async function saveCompleteProfile(
       subtaste_index: result.constellation.profile.subtasteIndex,
       explorer_score: result.constellation.profile.explorerScore,
       early_adopter_score: result.constellation.profile.earlyAdopterScore,
-      enhanced_interpretation: result.constellation.enhanced ?? null,
+      enhanced_interpretation: result.constellation.enhanced
+        ? (result.constellation.enhanced as unknown as Record<string, unknown>)
+        : null,
     });
 
     // Save representation profile
@@ -125,8 +128,8 @@ export async function saveCompleteProfile(
 
     // Save history snapshots
     await Promise.all([
-      storage.history.save(userId, 'psychometric', psychometric, 1),
-      storage.history.save(userId, 'aesthetic', aesthetic, 1),
+      storage.history.save(userId, 'psychometric', psychometric as unknown as Record<string, unknown>, 1),
+      storage.history.save(userId, 'aesthetic', aesthetic as unknown as Record<string, unknown>, 1),
       storage.history.save(
         userId,
         'constellation',
@@ -134,13 +137,13 @@ export async function saveCompleteProfile(
           primaryConstellationId: result.constellation.profile.primaryConstellationId,
           blendWeights: result.constellation.profile.blendWeights,
           subtasteIndex: result.constellation.profile.subtasteIndex,
-        },
+        } as Record<string, unknown>,
         1
       ),
       storage.history.save(
         userId,
         'representation',
-        result.representation.profile,
+        result.representation.profile as unknown as Record<string, unknown>,
         result.representation.profile.version
       ),
     ]);
@@ -187,7 +190,7 @@ export async function updateRepresentationIfNeeded(
     await storage.history.save(
       userId,
       'representation',
-      result.representation.profile,
+      result.representation.profile as unknown as Record<string, unknown>,
       result.representation.profile.version,
       'profile_update'
     );

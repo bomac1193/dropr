@@ -7,6 +7,9 @@
 
 import { ArchetypeConfig, ArchetypeId } from './types';
 
+// Re-export types for convenience
+export type { ArchetypeConfig, ArchetypeId } from './types';
+
 // =============================================================================
 // VESPYR — The Sage
 // =============================================================================
@@ -453,6 +456,9 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeConfig> = {
   vertex: VERTEX,
   fluxus: FLUXUS,
 };
+
+// Alias for backward compatibility
+export const ARCHETYPE_CONFIG = ARCHETYPES;
 
 export const ARCHETYPE_LIST: ArchetypeConfig[] = Object.values(ARCHETYPES);
 

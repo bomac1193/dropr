@@ -4,7 +4,7 @@
  * Exports Supabase clients and database types.
  */
 
-export { supabase, createClient } from './client';
+export { createClient, getClientSafe } from './client';
 export { createServerClient, createAdminClient } from './server';
 export type { Database, Json } from './types';
 export type {

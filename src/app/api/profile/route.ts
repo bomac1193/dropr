@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'export' && psychometric && aesthetic && constellation) {
-      // Generate machine-readable export
+      // Build camelCase inputs (computeConstellationProfile expects camelCase)
       const psychometricInput = {
         openness: psychometric.openness,
         conscientiousness: psychometric.conscientiousness,
@@ -115,8 +115,9 @@ export async function GET(request: NextRequest) {
         acousticVsDigital: aesthetic.acoustic_vs_digital,
       };
 
-      // Recompute for export
+      // Recompute constellation profile with camelCase inputs
       const computed = computeConstellationProfile(psychometricInput, aestheticInput);
+
       const exported = exportAestheticProfile(
         computed,
         psychometricInput,
@@ -233,7 +234,7 @@ export async function POST(request: NextRequest) {
 
     const interactionsSummary = aggregateInteractions(interactions ?? []);
 
-    // Recompute profile
+    // Recompute profile using camelCase inputs
     const { profile, result, enhanced } = computeConstellationProfile(
       psychometricInput,
       aestheticInput,

@@ -1,14 +1,29 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Check if Supabase is properly configured
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const hasValidSupabaseConfig =
+  supabaseUrl &&
+  !supabaseUrl.includes('[YOUR-PROJECT-REF]') &&
+  supabaseUrl.startsWith('https://') &&
+  supabaseAnonKey;
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
 
+  // Skip auth middleware if Supabase is not configured
+  if (!hasValidSupabaseConfig) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {

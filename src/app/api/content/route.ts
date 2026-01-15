@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     // Build query
     const where: Record<string, unknown> = {};
     if (type) {
-      where.type = type;
+      where.contentType = type;
     }
 
     // Exclude content the user has already interacted with
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, title, description, thumbnailUrl, contentUrl, tags, subcultureId } = body;
+    const { type: contentType, title, description, thumbnailUrl, contentUrl, tags, subcultureId } = body;
 
-    if (!type) {
+    if (!contentType) {
       return NextResponse.json(
         { error: 'Content type is required' },
         { status: 400 }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const item = await prisma.contentItem.create({
       data: {
-        type,
+        contentType,
         title,
         description,
         thumbnailUrl,

@@ -6,7 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { castVote } from '@/lib/battle';
+import { castVote, getBattle } from '@/lib/battle';
+import { emitVoteCast } from '@/lib/socket';
 
 const VoteSchema = z.object({
   voterId: z.string(),
@@ -29,6 +30,22 @@ export async function POST(
       data.votedFor,
       data.confidence
     );
+
+    // Get updated vote counts for socket event
+    const battle = await getBattle(battleId);
+    if (battle) {
+      const player1VoteCount = battle.votes.filter(v => v.votedFor === 'PLAYER_1').length;
+      const player2VoteCount = battle.votes.filter(v => v.votedFor === 'PLAYER_2').length;
+
+      // Emit socket event (non-blocking)
+      emitVoteCast({
+        battleId,
+        voterId: data.voterId,
+        votedFor: data.votedFor,
+        player1VoteCount,
+        player2VoteCount,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,

@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // =============================================================================
@@ -433,4 +432,129 @@ enum ChallengeType {
   VOTE_IN_BATTLES      // Vote in X battles
   USE_SPECIFIC_GENRE   // Select X remix genre
   EARN_HYPE            // Earn X hype points
+}
+
+// =============================================================================
+// Content System (Quiz/Feed)
+// =============================================================================
+
+model ContentItem {
+  id             String      @id @default(cuid())
+  contentType    ContentType
+  title          String?
+  description    String?
+  thumbnailUrl   String?
+  contentUrl     String?
+  featureEmbedding Float[]   @default([])
+  tags           String[]    @default([])
+  subcultureId   String?
+
+  subculture     SubcultureCluster? @relation(fields: [subcultureId], references: [id])
+  interactions   UserContentInteraction[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([contentType])
+  @@index([subcultureId])
+}
+
+enum ContentType {
+  image
+  track
+  ai_artifact
+}
+
+model UserContentInteraction {
+  id              String          @id @default(cuid())
+  userId          String
+  contentId       String
+
+  content         ContentItem     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  interactionType InteractionType
+  rating          Float?
+  dwellTimeMs     Int?
+  source          InteractionSource
+
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, contentId, interactionType])
+  @@index([userId])
+  @@index([contentId])
+}
+
+enum InteractionType {
+  view
+  like
+  dislike
+  save
+  share
+  skip
+}
+
+enum InteractionSource {
+  quiz
+  swipe
+  feed
+}
+
+// =============================================================================
+// Subculture Clustering
+// =============================================================================
+
+model SubcultureCluster {
+  id                  String   @id @default(cuid())
+  clusterId           String   @unique
+  name                String?
+  stage               SubcultureStage @default(forming)
+  coherence           Float    @default(0.5)
+  memberCount         Int      @default(0)
+  aestheticConstraints Json    @default("{}")
+  centroid            Json?
+  tags                String[] @default([])
+  constellationHints  String[] @default([])
+  embeddingVector     Float[]  @default([])
+
+  contentItems        ContentItem[]
+  userFits            UserSubcultureFit[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([stage])
+  @@index([coherence])
+}
+
+enum SubcultureStage {
+  forming
+  stable
+  dissolving
+  mainstreaming
+}
+
+model UserSubcultureFit {
+  id               String   @id @default(cuid())
+  userId           String
+  subcultureId     String
+
+  subculture       SubcultureCluster @relation(fields: [subcultureId], references: [id], onDelete: Cascade)
+
+  affinityScore    Float
+  earlyAdopterScore Float
+  adoptionStage    AdoptionStage
+
+  firstSeenAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, subcultureId])
+  @@index([userId])
+  @@index([subcultureId])
+}
+
+enum AdoptionStage {
+  early
+  mid
+  late
 }

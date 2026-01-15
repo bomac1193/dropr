@@ -7,6 +7,9 @@
 
 import { PulseArchetypeConfig, PulseArchetypeId } from './types';
 
+// Re-export types for convenience
+export type { PulseArchetypeConfig, PulseArchetypeId } from './types';
+
 // =============================================================================
 // TRENDSETTER
 // =============================================================================
@@ -61,7 +64,6 @@ const PURIST: PulseArchetypeConfig = {
 
   traitTendencies: {
     experimentalism: 25,     // Traditional
-    tasteCoherence: 90,      // Very consistent
     productionPolish: 80,    // Values quality
     genreFluidity: 20,       // Sticks to genres
     nostalgia: 75,           // Appreciates classics
@@ -98,7 +100,6 @@ const CHAOS_AGENT: PulseArchetypeConfig = {
     culturalAlignment: 30,   // Counter-mainstream
     emotionalIntensity: 85,  // Goes hard
     genreFluidity: 95,       // No rules
-    tasteCoherence: 25,      // Intentionally inconsistent
   },
 
   preferredGenres: ['HYPERPOP', 'DRILL', 'JERSEY_CLUB'],
@@ -200,7 +201,6 @@ const MOOD_SHIFTER: PulseArchetypeConfig = {
     genreFluidity: 80,       // Adaptable
     culturalAlignment: 50,   // Balanced
     energy: 50,              // Context-dependent
-    tasteCoherence: 40,      // Varies by mood
   },
 
   preferredGenres: ['AMBIENT', 'HOUSE', 'TRAP', 'PHONK'],

@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { getClientSafe } from '@/lib/supabase/client';
 
 interface AuthContextType {
   user: User | null;
@@ -20,9 +20,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+
+  // Get Supabase client safely - may be null if not configured
+  const supabase = useMemo(() => getClientSafe(), []);
 
   useEffect(() => {
+    // Skip if Supabase is not configured
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -40,9 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured') };
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -51,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured') };
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -62,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    if (!supabase) {
+      return { error: new Error('Supabase is not configured') };
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -72,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) {
+      return;
+    }
     await supabase.auth.signOut();
     // Clear local storage
     localStorage.removeItem('subtaste_user_id');

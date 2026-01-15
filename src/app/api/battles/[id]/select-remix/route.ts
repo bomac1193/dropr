@@ -6,7 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { selectRemix } from '@/lib/battle';
+import { selectRemix, getBattle } from '@/lib/battle';
+import { emitRemixSelected, emitBattleStateChanged } from '@/lib/socket';
 
 const SelectRemixSchema = z.object({
   playerId: z.string(),
@@ -23,6 +24,28 @@ export async function POST(
     const data = SelectRemixSchema.parse(body);
 
     const selection = await selectRemix(battleId, data.playerId, data.remixId);
+
+    // Get updated battle to check selection state
+    const battle = await getBattle(battleId);
+    const bothSelected = (battle?.remixSelections.length ?? 0) >= 2;
+
+    // Emit remix selected event (non-blocking)
+    emitRemixSelected({
+      battleId,
+      playerId: data.playerId,
+      remixId: data.remixId,
+      bothSelected,
+    }).catch(() => {});
+
+    // If both selected, emit state change to PLAYING_P1
+    if (bothSelected && battle && battle.status === 'PLAYING_P1') {
+      emitBattleStateChanged({
+        battleId,
+        previousStatus: 'SELECTING',
+        newStatus: 'PLAYING_P1',
+        playingEndsAt: battle.playingEndsAt?.toISOString(),
+      }).catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createBattle, getActiveBattles } from '@/lib/battle';
+import { emitBattleCreated } from '@/lib/socket';
 
 // =============================================================================
 // Request Schemas
@@ -30,6 +31,16 @@ export async function POST(request: NextRequest) {
     const data = CreateBattleSchema.parse(body);
 
     const battle = await createBattle(data);
+
+    // Emit socket event (non-blocking)
+    emitBattleCreated({
+      battleId: battle.id,
+      player1Id: battle.player1Id,
+      player2Id: battle.player2Id,
+      soundId: battle.soundId,
+      scene: battle.scene,
+      selectingEndsAt: battle.selectingEndsAt?.toISOString() || '',
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,
