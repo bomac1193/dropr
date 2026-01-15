@@ -38,12 +38,12 @@ export async function GET(
 
     // Calculate statistics
     const totalStakeValue = player.tasteStakes.reduce(
-      (sum, stake) => sum + stake.appreciationValue,
+      (sum: number, stake: { appreciationValue: number }) => sum + stake.appreciationValue,
       0
     );
 
-    const winsFromStakes = player.tasteStakes.filter(s => s.wasWinner).length;
-    const correctPredictions = player.tasteStakes.filter(s => s.predictionCorrect).length;
+    const winsFromStakes = player.tasteStakes.filter((s: { wasWinner: boolean }) => s.wasWinner).length;
+    const correctPredictions = player.tasteStakes.filter((s: { predictionCorrect: boolean }) => s.predictionCorrect).length;
 
     // Genre breakdown
     const genreCounts: Record<string, number> = {};
@@ -62,7 +62,7 @@ export async function GET(
     }
 
     // Recent battles (from taste stakes)
-    const recentBattleIds = player.tasteStakes.slice(0, 10).map(s => s.battleId);
+    const recentBattleIds = player.tasteStakes.slice(0, 10).map((s: { battleId: string }) => s.battleId);
     const recentBattles = await prisma.battle.findMany({
       where: { id: { in: recentBattleIds } },
       include: {
