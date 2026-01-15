@@ -7,6 +7,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+interface PlayerWithProfile {
+  id: string;
+  username: string;
+  robloxUserId: bigint;
+  influenceScore: number;
+  totalTasteStakes: number;
+  hypePoints: number;
+  battleCount: number;
+  winCount: number;
+  pulseProfile: { archetype: string | null; predictionAccuracy: number } | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,7 +35,7 @@ export async function GET(request: NextRequest) {
         include: { pulseProfile: true },
       });
 
-      leaderboards.influence = influenceLeaders.map((p, i) => ({
+      leaderboards.influence = influenceLeaders.map((p: PlayerWithProfile, i: number) => ({
         rank: i + 1,
         playerId: p.id,
         username: p.username,
@@ -42,14 +54,14 @@ export async function GET(request: NextRequest) {
       });
 
       const scoredTasteMakers = tasteMakers
-        .map(p => ({
+        .map((p: PlayerWithProfile) => ({
           ...p,
           predictionAccuracy: p.pulseProfile?.predictionAccuracy || 50,
         }))
         .sort((a, b) => b.predictionAccuracy - a.predictionAccuracy)
         .slice(0, limit);
 
-      leaderboards.tastemakers = scoredTasteMakers.map((p, i) => ({
+      leaderboards.tastemakers = scoredTasteMakers.map((p: PlayerWithProfile & { predictionAccuracy: number }, i: number) => ({
         rank: i + 1,
         playerId: p.id,
         username: p.username,
@@ -67,7 +79,7 @@ export async function GET(request: NextRequest) {
         include: { pulseProfile: true },
       });
 
-      leaderboards.stakes = stakePlayers.map((p, i) => ({
+      leaderboards.stakes = stakePlayers.map((p: PlayerWithProfile, i: number) => ({
         rank: i + 1,
         playerId: p.id,
         username: p.username,
@@ -85,7 +97,7 @@ export async function GET(request: NextRequest) {
         include: { pulseProfile: true },
       });
 
-      leaderboards.hype = hypePlayers.map((p, i) => ({
+      leaderboards.hype = hypePlayers.map((p: PlayerWithProfile, i: number) => ({
         rank: i + 1,
         playerId: p.id,
         username: p.username,
@@ -104,14 +116,14 @@ export async function GET(request: NextRequest) {
       });
 
       const scoredWinRate = winRatePlayers
-        .map(p => ({
+        .map((p: PlayerWithProfile) => ({
           ...p,
           winRate: p.battleCount > 0 ? (p.winCount / p.battleCount) * 100 : 0,
         }))
         .sort((a, b) => b.winRate - a.winRate)
         .slice(0, limit);
 
-      leaderboards.winrate = scoredWinRate.map((p, i) => ({
+      leaderboards.winrate = scoredWinRate.map((p: PlayerWithProfile & { winRate: number }, i: number) => ({
         rank: i + 1,
         playerId: p.id,
         username: p.username,
