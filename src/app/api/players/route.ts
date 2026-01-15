@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Convert BigInt to string
-    const playersResponse = players.map(p => ({
+    const playersResponse = players.map((p: { robloxUserId: bigint; [key: string]: unknown }) => ({
       ...p,
       robloxUserId: p.robloxUserId.toString(),
     }));
