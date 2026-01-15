@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
                   name: sound.name,
                   audioUrl: sound.audioUrl,
                 },
-                remixes: sound.remixes.map(r => ({
+                remixes: sound.remixes.map((r: { id: string; genre: string; name: string; audioUrl: string }) => ({
                   id: r.id,
                   genre: r.genre,
                   name: r.name,
