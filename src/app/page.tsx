@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Music, Swords, Trophy, Zap, Users, Sparkles } from 'lucide-react';
+import { Disc3, Swords, Crown, TrendingUp, Users, Sparkles, ChevronRight, Check } from 'lucide-react';
 
 export default function Home() {
   const [email, setEmail] = useState('');
@@ -32,60 +32,82 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div className="min-h-screen bg-[#0A0A0A] text-white overflow-hidden">
       {/* Hero Section */}
-      <main className="flex flex-col items-center justify-center px-6 py-16 md:py-24">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20">
+        {/* Background glow effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-violet-600/20 rounded-full blur-[120px]" />
+          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-pink-500/10 rounded-full blur-[100px]" />
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl"
+          transition={{ duration: 0.8 }}
+          className="relative text-center max-w-4xl z-10"
         >
-          {/* Logo */}
+          {/* Badge */}
           <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mb-6"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] border border-[#404040] rounded-full text-sm text-[#A1A1AA] mb-8"
           >
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight">
-              <span className="bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-                DROPR
-              </span>
-            </h1>
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            Coming to Roblox
           </motion.div>
 
-          <p className="text-2xl md:text-3xl text-neutral-300 mb-4 font-medium">
-            AI Music Battles on Roblox
+          {/* Logo */}
+          <h1 className="font-display text-7xl md:text-9xl font-bold tracking-tighter mb-6">
+            <span className="text-gradient-hero">DROPR</span>
+          </h1>
+
+          {/* Tagline */}
+          <p className="text-2xl md:text-4xl text-[#FAFAFA] font-display font-medium mb-4">
+            Where Taste Becomes Status
           </p>
 
-          <p className="text-lg text-neutral-500 mb-10 max-w-xl mx-auto leading-relaxed">
-            Drop beats. Battle friends. Build your taste profile.
-            The first AI-powered music battle experience where your votes shape what goes viral.
+          <p className="text-lg md:text-xl text-[#A1A1AA] max-w-2xl mx-auto mb-10 leading-relaxed">
+            The algorithm is dead. In DROPR, <span className="text-white">you</span> decide what goes viral.
+            Battle friends with AI-generated beats and prove your taste to the world.
           </p>
 
           {/* Email Signup */}
           <motion.form
             onSubmit={handleSubmit}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto mb-6"
           >
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              className="flex-1 px-5 py-4 bg-neutral-900 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="flex-1 px-6 py-4 bg-[#171717] border border-[#404040] rounded-xl text-white placeholder-[#71717A] focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all"
               disabled={status === 'loading' || status === 'success'}
             />
             <button
               type="submit"
               disabled={status === 'loading' || status === 'success'}
-              className="px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-semibold hover:from-violet-500 hover:to-fuchsia-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="group px-8 py-4 bg-gradient-primary rounded-xl font-semibold text-white hover-glow transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {status === 'loading' ? 'Joining...' : status === 'success' ? 'You\'re In!' : 'Join Waitlist'}
+              {status === 'loading' ? (
+                'Joining...'
+              ) : status === 'success' ? (
+                <>
+                  <Check className="w-5 h-5" />
+                  You're In
+                </>
+              ) : (
+                <>
+                  Get Early Access
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </motion.form>
 
@@ -93,9 +115,9 @@ export default function Home() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-green-400 text-sm"
+              className="text-emerald-400 text-sm"
             >
-              Thanks for joining! We'll notify you when DROPR launches.
+              You're on the list. We'll hit you up when it's time to drop.
             </motion.p>
           )}
 
@@ -105,148 +127,316 @@ export default function Home() {
               animate={{ opacity: 1 }}
               className="text-red-400 text-sm"
             >
-              Something went wrong. Please try again.
+              Something went wrong. Try again.
             </motion.p>
           )}
 
-          <p className="text-neutral-600 text-sm mt-4">
-            Coming soon to Roblox
-          </p>
+          {status === 'idle' && (
+            <p className="text-[#71717A] text-sm">
+              Join 0 others waiting for launch
+            </p>
+          )}
         </motion.div>
 
-        {/* Features Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-5xl w-full px-4"
-        >
-          <FeatureCard
-            icon={<Music className="w-7 h-7" />}
-            title="AI-Generated Beats"
-            description="Every battle features unique AI-generated remixes. No two drops are ever the same."
-            gradient="from-cyan-500 to-blue-500"
-          />
-          <FeatureCard
-            icon={<Swords className="w-7 h-7" />}
-            title="Real-Time Battles"
-            description="Go head-to-head with other players. Pick your remix, stake your taste, and let the crowd decide."
-            gradient="from-violet-500 to-purple-500"
-          />
-          <FeatureCard
-            icon={<Trophy className="w-7 h-7" />}
-            title="Climb the Ranks"
-            description="Build influence, earn hype points, and become a tastemaker in the DROPR community."
-            gradient="from-fuchsia-500 to-pink-500"
-          />
-        </motion.div>
-
-        {/* How It Works */}
+        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-24 text-center max-w-4xl"
+          transition={{ delay: 1 }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-12">
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">
-              How It Works
-            </span>
-          </h2>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="w-6 h-10 border-2 border-[#404040] rounded-full flex items-start justify-center p-2"
+          >
+            <div className="w-1.5 h-2 bg-[#A1A1AA] rounded-full" />
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Problem Section */}
+      <section className="relative py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-[#8B5CF6] font-mono text-sm tracking-wider uppercase mb-4">The Problem</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
+              Music Discovery is <span className="text-gradient-primary">Broken</span>
+            </h2>
+            <p className="text-[#A1A1AA] text-lg max-w-2xl mx-auto">
+              Algorithms decide what you hear. Influencers decide what goes viral.
+              Your taste? Just data they extract and sell.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ProblemCard
+              number="01"
+              title="Echo Chambers"
+              description="Algorithms feed you what you already like. Nothing challenges you. Nothing surprises you."
+            />
+            <ProblemCard
+              number="02"
+              title="Zero Agency"
+              description="What goes viral is decided by curators and labels. You're just a passive consumer."
+            />
+            <ProblemCard
+              number="03"
+              title="Taste ≠ Identity"
+              description="Music used to say something about you. Now it's just background noise picked by an algorithm."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Solution Section */}
+      <section className="relative py-24 px-6 bg-[#0D0D0D]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-[#06B6D4] font-mono text-sm tracking-wider uppercase mb-4">The Solution</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
+              Make Taste a <span className="text-gradient-secondary">Competitive Sport</span>
+            </h2>
+            <p className="text-[#A1A1AA] text-lg max-w-2xl mx-auto">
+              DROPR turns music discovery into a game. Battle friends. Prove your taste.
+              Rise the ranks. You decide what goes viral.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FeatureCard
+              icon={<Disc3 className="w-6 h-6" />}
+              title="AI Beats"
+              description="Every battle features unique AI-generated remixes. EDM, Lo-Fi, Trap—same sound, infinite versions."
+              color="cyan"
+            />
+            <FeatureCard
+              icon={<Swords className="w-6 h-6" />}
+              title="1v1 Battles"
+              description="Face off against other players. Pick your remix. Let the crowd decide who has better taste."
+              color="violet"
+            />
+            <FeatureCard
+              icon={<Users className="w-6 h-6" />}
+              title="Crowd Votes"
+              description="No algorithm. No curators. The audience votes on every battle. Democracy of taste."
+              color="pink"
+            />
+            <FeatureCard
+              icon={<Crown className="w-6 h-6" />}
+              title="Rise Up"
+              description="Win battles. Gain influence. Climb the leaderboard. Become a tastemaker."
+              color="amber"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="relative py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-[#EC4899] font-mono text-sm tracking-wider uppercase mb-4">Gameplay</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold">
+              How It <span className="text-gradient-primary">Works</span>
+            </h2>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <StepCard number={1} title="Join a Battle" description="Get matched with another player and a random sound drop" />
-            <StepCard number={2} title="Pick Your Remix" description="Choose from AI-generated genre remixes of the sound" />
-            <StepCard number={3} title="Crowd Votes" description="Spectators vote on which remix hits harder" />
-            <StepCard number={4} title="Earn & Rise" description="Win battles, gain influence, shape what goes viral" />
+            <StepCard
+              number={1}
+              title="Join Battle"
+              description="Get matched with another player and a random sound drop"
+            />
+            <StepCard
+              number={2}
+              title="Pick Remix"
+              description="Choose from AI-generated genre remixes of the sound"
+            />
+            <StepCard
+              number={3}
+              title="Crowd Votes"
+              description="Spectators vote on which remix hits harder"
+            />
+            <StepCard
+              number={4}
+              title="Win & Rise"
+              description="Earn influence, climb ranks, shape what goes viral"
+            />
           </div>
-        </motion.div>
+        </div>
+      </section>
 
-        {/* Stats/Social Proof */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-24 flex flex-wrap justify-center gap-12 text-center"
-        >
-          <StatCard icon={<Zap />} value="Real-Time" label="Battle System" />
-          <StatCard icon={<Users />} value="Multiplayer" label="Voting" />
-          <StatCard icon={<Sparkles />} value="AI-Powered" label="Music Generation" />
-        </motion.div>
-      </main>
+      {/* PULSE Archetypes */}
+      <section className="relative py-24 px-6 bg-[#0D0D0D]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-[#8B5CF6] font-mono text-sm tracking-wider uppercase mb-4">Your Identity</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
+              Discover Your <span className="text-gradient-hero">Taste Archetype</span>
+            </h2>
+            <p className="text-[#A1A1AA] text-lg max-w-2xl mx-auto">
+              Your battles reveal your taste DNA. Which archetype are you?
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <ArchetypeCard name="Trendsetter" title="The Prophet" description="First to spot winners" />
+            <ArchetypeCard name="Purist" title="The Scholar" description="Deep genre knowledge" />
+            <ArchetypeCard name="Chaos Agent" title="The Wildcard" description="Loves the upset" />
+            <ArchetypeCard name="Crowd Surfer" title="The Vibe Reader" description="Reads the room" />
+            <ArchetypeCard name="Architect" title="The Engineer" description="Values production" />
+            <ArchetypeCard name="Mood Shifter" title="The Empath" description="Context is everything" />
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="relative py-32 px-6">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-violet-600/10 rounded-full blur-[150px]" />
+        </div>
+
+        <div className="max-w-3xl mx-auto text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="font-display text-4xl md:text-6xl font-bold mb-6">
+              Ready to <span className="text-gradient-hero">Prove Your Taste</span>?
+            </h2>
+            <p className="text-[#A1A1AA] text-xl mb-10">
+              Join the waitlist. Be first to drop when we launch on Roblox.
+            </p>
+
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="flex-1 px-6 py-4 bg-[#171717] border border-[#404040] rounded-xl text-white placeholder-[#71717A] focus:outline-none focus:border-violet-500 transition-all"
+                disabled={status === 'loading' || status === 'success'}
+              />
+              <button
+                type="submit"
+                disabled={status === 'loading' || status === 'success'}
+                className="px-8 py-4 bg-gradient-primary rounded-xl font-semibold hover-glow transition-all disabled:opacity-50"
+              >
+                {status === 'success' ? "You're In" : 'Join Waitlist'}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="py-12 text-center border-t border-neutral-900">
-        <p className="text-neutral-600 text-sm mb-2">
-          DROPR • AI Music Battles
-        </p>
-        <p className="text-neutral-700 text-xs">
-          Coming soon to Roblox
-        </p>
+      <footer className="py-12 px-6 border-t border-[#1a1a1a]">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="font-display font-bold text-xl text-gradient-hero">DROPR</div>
+          <p className="text-[#71717A] text-sm">
+            The algorithm is dead. Long live taste.
+          </p>
+          <p className="text-[#404040] text-xs">
+            Built by VIOLET SPHINX
+          </p>
+        </div>
       </footer>
     </div>
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-  gradient,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  gradient: string;
-}) {
+function ProblemCard({ number, title, description }: { number: string; title: string; description: string }) {
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 text-center hover:border-neutral-700 transition-colors"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="bg-[#171717] border border-[#262626] rounded-2xl p-8 hover:border-[#404040] transition-colors"
     >
-      <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} text-white mb-5`}>
-        {icon}
-      </div>
-      <h3 className="font-bold text-xl mb-3">{title}</h3>
-      <p className="text-neutral-400 leading-relaxed">{description}</p>
+      <span className="font-mono text-[#404040] text-sm">{number}</span>
+      <h3 className="font-display font-semibold text-xl mt-2 mb-3">{title}</h3>
+      <p className="text-[#A1A1AA] leading-relaxed">{description}</p>
     </motion.div>
   );
 }
 
-function StepCard({
-  number,
-  title,
-  description,
-}: {
-  number: number;
-  title: string;
-  description: string;
-}) {
+function FeatureCard({ icon, title, description, color }: { icon: React.ReactNode; title: string; description: string; color: string }) {
+  const colorClasses = {
+    cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    violet: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    pink: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+    amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  };
+
   return (
-    <div className="text-center">
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white font-bold text-lg mb-4">
-        {number}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      whileHover={{ y: -4 }}
+      className="bg-[#171717] border border-[#262626] rounded-2xl p-6 hover:border-[#404040] transition-all"
+    >
+      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl border ${colorClasses[color as keyof typeof colorClasses]} mb-4`}>
+        {icon}
       </div>
-      <h3 className="font-semibold text-lg mb-2">{title}</h3>
-      <p className="text-neutral-500 text-sm">{description}</p>
-    </div>
+      <h3 className="font-display font-semibold text-lg mb-2">{title}</h3>
+      <p className="text-[#A1A1AA] text-sm leading-relaxed">{description}</p>
+    </motion.div>
   );
 }
 
-function StatCard({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-}) {
+function StepCard({ number, title, description }: { number: number; title: string; description: string }) {
   return (
-    <div className="text-center">
-      <div className="text-violet-400 mb-2 flex justify-center">{icon}</div>
-      <div className="text-2xl font-bold text-white">{value}</div>
-      <div className="text-neutral-500 text-sm">{label}</div>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: number * 0.1 }}
+      className="text-center"
+    >
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-primary text-white font-display font-bold text-xl mb-4 glow-primary">
+        {number}
+      </div>
+      <h3 className="font-display font-semibold text-lg mb-2">{title}</h3>
+      <p className="text-[#71717A] text-sm">{description}</p>
+    </motion.div>
+  );
+}
+
+function ArchetypeCard({ name, title, description }: { name: string; title: string; description: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
+      whileHover={{ scale: 1.02 }}
+      className="bg-[#171717] border border-[#262626] rounded-xl p-5 hover:border-violet-500/30 transition-all cursor-pointer"
+    >
+      <p className="text-[#8B5CF6] font-mono text-xs uppercase tracking-wider mb-1">{name}</p>
+      <h3 className="font-display font-semibold text-white mb-1">{title}</h3>
+      <p className="text-[#71717A] text-sm">{description}</p>
+    </motion.div>
   );
 }
