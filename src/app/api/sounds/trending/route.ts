@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate trending score for each sound
-    const trendingData = sounds.map(sound => {
+    const trendingData = sounds.map((sound: { _count: { battles: number }; viralScore: number; [key: string]: unknown }) => {
       // Simple trending score: recent battles * viral score
       const recentBattles = sound._count.battles;
       const trendingScore = recentBattles * (sound.viralScore / 100 + 1);
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Sort by trending score
-    trendingData.sort((a, b) => b.trendingScore - a.trendingScore);
+    trendingData.sort((a: { trendingScore: number }, b: { trendingScore: number }) => b.trendingScore - a.trendingScore);
 
     return NextResponse.json({
       success: true,
