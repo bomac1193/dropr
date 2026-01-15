@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createBattle, getActiveBattles } from '@/lib/battle';
+import { createBattle, getActiveBattles, CreateBattleInput } from '@/lib/battle';
 import { emitBattleCreated } from '@/lib/socket';
 
 // =============================================================================
@@ -28,7 +28,7 @@ const CreateBattleSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const data = CreateBattleSchema.parse(body);
+    const data = CreateBattleSchema.parse(body) as CreateBattleInput;
 
     const battle = await createBattle(data);
 
