@@ -34,8 +34,8 @@ export async function POST(
     // Get updated vote counts for socket event
     const battle = await getBattle(battleId);
     if (battle) {
-      const player1VoteCount = battle.votes.filter(v => v.votedFor === 'PLAYER_1').length;
-      const player2VoteCount = battle.votes.filter(v => v.votedFor === 'PLAYER_2').length;
+      const player1VoteCount = battle.votes.filter((v: { votedFor: string }) => v.votedFor === 'PLAYER_1').length;
+      const player2VoteCount = battle.votes.filter((v: { votedFor: string }) => v.votedFor === 'PLAYER_2').length;
 
       // Emit socket event (non-blocking)
       emitVoteCast({
