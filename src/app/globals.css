@@ -1,136 +1,123 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand Colors */
-  --color-primary: #8B5CF6;
-  --color-secondary: #06B6D4;
-  --color-accent: #EC4899;
+  /* Hero Archetype Color System */
 
-  /* Backgrounds */
-  --color-bg: #0A0A0A;
-  --color-surface: #171717;
-  --color-surface-elevated: #262626;
-  --color-border: #404040;
+  /* Primary - Black dominance */
+  --color-black: #000000;
+  --color-surface: #111111;
+  --color-surface-elevated: #1a1a1a;
 
-  /* Text */
-  --color-text-primary: #FAFAFA;
-  --color-text-secondary: #A1A1AA;
-  --color-text-tertiary: #71717A;
+  /* Text hierarchy */
+  --color-text: #ffffff;
+  --color-text-secondary: #888888;
+  --color-text-muted: #555555;
+
+  /* Borders */
+  --color-border: #333333;
+  --color-border-subtle: #222222;
+
+  /* Accent - Competition/Energy */
+  --color-accent: #FF4D00;
+  --color-accent-hover: #FF6A2A;
+
+  /* Achievement - Victory/Status */
+  --color-gold: #FFB800;
+  --color-gold-dim: #CC9400;
 
   /* States */
   --color-success: #22C55E;
   --color-error: #EF4444;
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
-  --gradient-secondary: linear-gradient(135deg, #06B6D4 0%, #8B5CF6 100%);
-  --gradient-hero: linear-gradient(135deg, #06B6D4 0%, #8B5CF6 50%, #EC4899 100%);
-
   /* Fonts */
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
+  --font-display: var(--font-display), system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-body), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
 }
 
 @theme inline {
-  --color-background: var(--color-bg);
-  --color-foreground: var(--color-text-primary);
+  --color-background: var(--color-black);
+  --color-foreground: var(--color-text);
   --font-sans: var(--font-body);
   --font-mono: var(--font-mono);
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  font-family: var(--font-body), system-ui, sans-serif;
+  background: var(--color-black);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Font utilities */
 .font-display {
-  font-family: var(--font-display), system-ui, sans-serif;
+  font-family: var(--font-display);
 }
 
 .font-body {
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
 .font-mono {
-  font-family: var(--font-mono), monospace;
-}
-
-/* Gradient text utility */
-.text-gradient-primary {
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-secondary {
-  background: var(--gradient-secondary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-hero {
-  background: var(--gradient-hero);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Gradient background utility */
-.bg-gradient-primary {
-  background: var(--gradient-primary);
-}
-
-.bg-gradient-secondary {
-  background: var(--gradient-secondary);
-}
-
-.bg-gradient-hero {
-  background: var(--gradient-hero);
-}
-
-/* Glow effects */
-.glow-primary {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-}
-
-.glow-secondary {
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
-}
-
-.glow-accent {
-  box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
-}
-
-/* Hover glow */
-.hover-glow:hover {
-  box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+  font-family: var(--font-mono);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(139, 92, 246, 0.3);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-black);
 }
 
-/* Scrollbar */
+/* Focus states - visible, not decorative */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Scrollbar - minimal */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg);
+  background: var(--color-black);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-tertiary);
+  background: var(--color-text-muted);
+}
+
+/* Button base - Hero style */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* No animations on reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none;
+    transition: none;
+  }
 }

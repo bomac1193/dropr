@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const inter = Inter({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const inter = Inter({
+const interBody = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -22,18 +22,18 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DROPR - Where Taste Becomes Status",
-  description: "The first AI music battle game on Roblox. Drop beats. Battle friends. Prove your taste. The algorithm is dead—you decide what goes viral.",
-  keywords: ["roblox", "music", "battle", "ai", "gaming", "taste", "viral"],
+  title: "DROPR",
+  description: "The arena where taste is proven. Battle with AI-generated music. Prove your taste. Rise.",
+  keywords: ["roblox", "music", "battle", "competition", "taste"],
   openGraph: {
-    title: "DROPR - Where Taste Becomes Status",
-    description: "The first AI music battle game on Roblox. Prove your taste.",
+    title: "DROPR",
+    description: "The arena where taste is proven.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DROPR - Where Taste Becomes Status",
-    description: "The first AI music battle game on Roblox. Prove your taste.",
+    title: "DROPR",
+    description: "The arena where taste is proven.",
   },
 };
 
@@ -44,9 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased bg-[#0A0A0A] text-white font-body`}
-      >
+      <body className={`${inter.variable} ${interBody.variable} ${jetbrainsMono.variable} antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>
