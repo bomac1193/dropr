@@ -1,42 +1,36 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { EB_Garamond, DM_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const ebGaramond = EB_Garamond({
+  variable: "--font-eb-garamond",
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const dmMono = DM_Mono({
+  variable: "--font-dm-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  weight: ["700"],
+  weight: ["400"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "DROPR | Because Taste Pays",
-  description: "The first platform where music taste becomes equity. Battle with AI remixes, prove your judgment, earn stakes in the AI you're training.",
-  keywords: ["taste economy", "music curation", "AI music", "earn from taste", "roblox"],
+  title: "DROPR | Drop heat. Prove your taste.",
+  description: "A timestamp for taste. A credential for curators. Not another playlist app—proof of what you knew before the algorithm caught up.",
+  keywords: ["music curation", "taste validation", "music discovery", "curator credential"],
   openGraph: {
-    title: "DROPR | Because Taste Pays",
-    description: "Your taste pays you. Literally. The first platform where music taste becomes equity.",
+    title: "DROPR | Drop heat. Prove your taste.",
+    description: "A timestamp for taste. A credential for curators.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DROPR | Because Taste Pays",
-    description: "Your taste pays you. Literally.",
+    title: "DROPR | Drop heat. Prove your taste.",
+    description: "Your taste is valid.",
   },
 };
 
@@ -47,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${ebGaramond.variable} ${dmMono.variable}`}>
         <AuthProvider>
           {children}
         </AuthProvider>
