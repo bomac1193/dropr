@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
           ...p,
           predictionAccuracy: p.pulseProfile?.predictionAccuracy || 50,
         }))
-        .sort((a, b) => b.predictionAccuracy - a.predictionAccuracy)
+        .sort((a: { predictionAccuracy: number }, b: { predictionAccuracy: number }) => b.predictionAccuracy - a.predictionAccuracy)
         .slice(0, limit);
 
       leaderboards.tastemakers = scoredTasteMakers.map((p: PlayerWithProfile & { predictionAccuracy: number }, i: number) => ({
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
           ...p,
           winRate: p.battleCount > 0 ? (p.winCount / p.battleCount) * 100 : 0,
         }))
-        .sort((a, b) => b.winRate - a.winRate)
+        .sort((a: { winRate: number }, b: { winRate: number }) => b.winRate - a.winRate)
         .slice(0, limit);
 
       leaderboards.winrate = scoredWinRate.map((p: PlayerWithProfile & { winRate: number }, i: number) => ({
