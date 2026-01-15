@@ -101,7 +101,7 @@ export async function GET(
       favoriteGenre,
 
       // Recent activity
-      recentBattles: recentBattles.map(b => ({
+      recentBattles: recentBattles.map((b: { id: string; sound: { name: string }; player1Id: string; player2: { username: string }; player1: { username: string }; winnerId: string | null; createdAt: Date }) => ({
         id: b.id,
         sound: b.sound.name,
         opponent: b.player1Id === player.id
